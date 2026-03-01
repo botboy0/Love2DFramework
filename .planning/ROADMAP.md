@@ -32,10 +32,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Events emitted during `update()` are not delivered until `bus:flush()` is called — handlers see no events mid-update
   4. An entity spawned via `worlds` helpers exists in the correct world; raw `evolved.spawn()` is not reachable from plugin code
   5. Shutting down triggers `plugin:quit()` on all registered plugins in reverse boot order
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md — Worlds single-world mode + components.lua ships empty (Wave 1)
+- [ ] 01-02-PLAN.md — Bus error_mode + Transport NullTransport stub (Wave 1)
+- [ ] 01-03-PLAN.md — Context assembly (transport, auto-bridge, config) + Registry error_mode/side enforcement (Wave 2)
+- [ ] 01-04-PLAN.md — main.lua wiring (love.quit, transport flush) + canonical plugin update (Wave 3)
 
 ### Phase 2: Plugin Infrastructure
 **Goal**: The canonical plugin pattern is codified in a reference file and every plugin can be loaded and tested in isolation without sibling plugins
@@ -123,7 +126,7 @@ Note: Phase 6 (Developer Tools) depends only on Phase 1 and Phase 7 (Documentati
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Infrastructure | 0/? | Not started | - |
+| 1. Core Infrastructure | 0/4 | Planned | - |
 | 2. Plugin Infrastructure | 0/? | Not started | - |
 | 3. Input Plugin | 0/? | Not started | - |
 | 4. Asset Pipeline | 0/? | Not started | - |
