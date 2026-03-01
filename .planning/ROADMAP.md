@@ -43,7 +43,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A plugin loaded in isolation (without sibling plugins) passes all its tests using the isolation test template
   4. The canonical plugin example demonstrates component registration, system registration, and event handling in one file that passes lint and tests
   5. A message sent through love.thread channel transport arrives on the other side in the same tick it was flushed
-**Plans**: TBD
+**Plans:** 4 plans
+- [ ] 02-01-PLAN.md — Vendor libraries (evolved.lua, binser) + deferred-dispatch event bus (TDD)
+- [ ] 02-02-PLAN.md — Shared components, dual ECS worlds, context object pattern (TDD)
+- [ ] 02-03-PLAN.md — Plugin registry with dependency sort + transport layer (TDD)
+- [ ] 02-04-PLAN.md — Plugin isolation harness upgrade, canonical plugin, main.lua wiring
 
 ## Progress
 
@@ -53,4 +57,4 @@ Phases execute in numeric order: 1 → 2
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. DevOps Foundation | 4/4 | Complete   | 2026-03-01 |
-| 2. Core Infrastructure | 0/TBD | Not started | - |
+| 2. Core Infrastructure | 0/4 | Not started | - |
