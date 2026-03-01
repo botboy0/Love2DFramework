@@ -206,8 +206,10 @@ describe("Registry", function()
 			r:register("derived", make_plugin("derived", log), { deps = { "base" } })
 			local ctx = make_ctx()
 			r:boot(ctx)
-			-- clear init log entries
-			log = {}
+			-- clear init log entries in-place so plugin closures still point to the same table
+			while #log > 0 do
+				table.remove(log)
+			end
 			r:shutdown(ctx)
 			-- shutdown should be in reverse boot order: derived first, then base
 			assert.are.equal("shutdown:derived", log[1])
