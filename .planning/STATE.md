@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 1 of 7 (Core Infrastructure)
-Plan: 2 of ? in current phase
+Plan: 3 of ? in current phase
 Status: In progress
-Last activity: 2026-03-01 — Completed 01-02 (Bus error_mode + NullTransport)
+Last activity: 2026-03-02 — Completed 01-03 (Context transport wiring + Registry error_mode + side enforcement)
 
-Progress: [██░░░░░░░░] ~14%
+Progress: [███░░░░░░░] ~21%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: ~2 min/plan
-- Total execution time: ~4 min
+- Total plans completed: 3
+- Average duration: ~3 min/plan
+- Total execution time: ~8 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-core-infrastructure | 2 | ~4 min | ~2 min |
+| 01-core-infrastructure | 3 | ~8 min | ~2.7 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-02
+- Last 5 plans: 01-01, 01-02, 01-03
 - Trend: On track
 
 *Updated after each plan completion*
@@ -51,6 +51,11 @@ Recent decisions affecting current work:
 - [01-02]: Bus strict mode uses pcall + error(err, 0) re-raise so _flushing is always reset before error propagates
 - [01-02]: Bus.new(fn) backward compat preserved — function arg treated as log with tolerant mode; opts table is new preferred form
 - [01-02]: Transport.Null exposed on Transport table (not separate module) — callers require only src.core.transport
+- [01-03]: Auto-bridge always installed on bus:emit() — NullTransport.is_networkable always returns false, so no special-casing needed
+- [01-03]: transport = true requires opts.transport_channels; channel creation belongs in main.lua, not Context.new
+- [01-03]: resolve_error_mode() duplicated in context.lua and registry.lua (acceptable until a third caller appears)
+- [01-03]: Registry tolerant boot uses pcall(entry.module.init, entry.module, ctx) — method syntax cannot be pcall'd cleanly
+- [01-03]: Side enforcement uses is_dual_world() duck-type check (worlds.server + worlds.client) — no worlds mode flag needed
 
 ### Pending Todos
 
@@ -63,6 +68,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Completed 01-01-PLAN.md — Worlds single-world mode + empty components; both 01-01 and 01-02 are now complete, ready for 01-03
+Last session: 2026-03-02
+Stopped at: Completed 01-03-PLAN.md — Context transport wiring, auto-bridge, Registry error_mode and side enforcement; ready for 01-04
 Resume file: None

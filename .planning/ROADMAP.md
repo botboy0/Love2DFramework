@@ -37,7 +37,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — Worlds single-world mode + components.lua ships empty (Wave 1)
 - [x] 01-02-PLAN.md — Bus error_mode + Transport NullTransport stub (Wave 1)
-- [ ] 01-03-PLAN.md — Context assembly (transport, auto-bridge, config) + Registry error_mode/side enforcement (Wave 2)
+- [x] 01-03-PLAN.md — Context assembly (transport, auto-bridge, config) + Registry error_mode/side enforcement (Wave 2)
 - [ ] 01-04-PLAN.md — main.lua wiring (love.quit, transport flush) + canonical plugin update (Wave 3)
 
 ### Phase 2: Plugin Infrastructure
@@ -126,7 +126,7 @@ Note: Phase 6 (Developer Tools) depends only on Phase 1 and Phase 7 (Documentati
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Infrastructure | 2/4 | In Progress|  |
+| 1. Core Infrastructure | 3/4 | In Progress|  |
 | 2. Plugin Infrastructure | 0/? | Not started | - |
 | 3. Input Plugin | 0/? | Not started | - |
 | 4. Asset Pipeline | 0/? | Not started | - |
