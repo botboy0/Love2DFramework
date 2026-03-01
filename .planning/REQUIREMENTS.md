@@ -31,6 +31,10 @@ Requirements for initial release. DevOps + infrastructure foundation — no game
 
 Deferred to next milestone. Game features (Age 0: beach to copper tool).
 
+### Infrastructure Carry-Forward
+
+- **INFRA-08**: Wire transport module into `love.update` tick loop and connect bus handler to `transport:queue()` for Event → Transport → Channel round-trip (deferred from v1.0 — no game plugin consumers yet)
+
 ### World
 
 - **WORLD-01**: Chunk-based infinite procedural world generation (server-side)
