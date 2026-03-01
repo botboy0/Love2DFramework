@@ -1,16 +1,25 @@
 --- Registry test suite.
 ---
 --- Tests plugin registration, topological dependency sorting, boot order,
---- missing dependency detection, cycle detection, and shutdown behavior.
+--- missing dependency detection, cycle detection, shutdown behavior,
+--- error_mode (strict/tolerant), and side enforcement.
 
 local Bus = require("src.core.bus")
 local Context = require("src.core.context")
 local Registry = require("src.core.registry")
+local Worlds = require("src.core.worlds")
 
---- Build a minimal ctx for boot tests.
+--- Build a minimal ctx for boot tests (single-world).
 local function make_ctx()
 	local bus = Bus.new()
 	return Context.new({ bus = bus, config = {} })
+end
+
+--- Build a ctx with a dual-world handle (for side enforcement tests).
+local function make_dual_ctx()
+	local bus = Bus.new()
+	local worlds = Worlds.create({ dual = true })
+	return Context.new({ bus = bus, worlds = worlds, config = {} })
 end
 
 --- Build a simple plugin that records init/shutdown calls.
@@ -19,6 +28,20 @@ local function make_plugin(name, log)
 		name = name,
 		init = function(_self, _ctx)
 			table.insert(log, "init:" .. name)
+		end,
+		shutdown = function(_self, _ctx)
+			table.insert(log, "shutdown:" .. name)
+		end,
+	}
+end
+
+--- Build a plugin whose init always errors.
+local function make_failing_plugin(name, log)
+	return {
+		name = name,
+		init = function(_self, _ctx)
+			table.insert(log, "init_attempt:" .. name)
+			error("plugin " .. name .. " init failed intentionally")
 		end,
 		shutdown = function(_self, _ctx)
 			table.insert(log, "shutdown:" .. name)
@@ -233,6 +256,223 @@ describe("Registry", function()
 				r:shutdown(ctx)
 			end)
 			assert.are.equal(0, #log) -- no shutdown calls
+		end)
+	end)
+
+	describe("error_mode", function()
+		it("strict mode (default): plugin init error propagates from boot()", function()
+			local r = Registry.new() -- default = strict
+			local log = {}
+			r:register("bad_plugin", make_failing_plugin("bad_plugin", log))
+			local ok, err = pcall(function()
+				r:boot(make_ctx())
+			end)
+			assert.is_false(ok)
+			assert.is_truthy(err:find("bad_plugin"))
+		end)
+
+		it("strict mode: error propagates even when other plugins registered", function()
+			local r = Registry.new()
+			local log = {}
+			r:register("good_plugin", make_plugin("good_plugin", log))
+			r:register("bad_plugin", make_failing_plugin("bad_plugin", log))
+			local ok, _err = pcall(function()
+				r:boot(make_ctx())
+			end)
+			assert.is_false(ok)
+		end)
+
+		it("tolerant mode: plugin init error is logged, boot continues", function()
+			local logged = {}
+			local r = Registry.new({
+				config = { error_mode = "tolerant" },
+				log = function(msg)
+					table.insert(logged, msg)
+				end,
+			})
+			local log = {}
+			r:register("bad_plugin", make_failing_plugin("bad_plugin", log))
+			r:register("good_plugin", make_plugin("good_plugin", log))
+
+			local ok = pcall(function()
+				r:boot(make_ctx())
+			end)
+
+			-- Boot should NOT throw in tolerant mode
+			assert.is_true(ok)
+			-- good_plugin should still have been initialized
+			local found_good = false
+			for _, v in ipairs(log) do
+				if v == "init:good_plugin" then
+					found_good = true
+				end
+			end
+			assert.is_true(found_good)
+		end)
+
+		it("tolerant mode: error is logged (not silently swallowed)", function()
+			local logged = {}
+			local r = Registry.new({
+				config = { error_mode = "tolerant" },
+				log = function(msg)
+					table.insert(logged, msg)
+				end,
+			})
+			local log = {}
+			r:register("bad_plugin", make_failing_plugin("bad_plugin", log))
+			pcall(function()
+				r:boot(make_ctx())
+			end)
+
+			assert.is_true(#logged > 0)
+			-- Log message should mention the plugin or the error
+			local found_mention = false
+			for _, msg in ipairs(logged) do
+				if type(msg) == "string" and (msg:find("bad_plugin") or msg:find("failed")) then
+					found_mention = true
+				end
+			end
+			assert.is_true(found_mention)
+		end)
+
+		it("tolerant mode: failed plugin is excluded from shutdown order", function()
+			local logged = {}
+			local r = Registry.new({
+				config = { error_mode = "tolerant" },
+				log = function(msg)
+					table.insert(logged, msg)
+				end,
+			})
+			local log = {}
+			r:register("bad_plugin", make_failing_plugin("bad_plugin", log))
+			r:register("good_plugin", make_plugin("good_plugin", log))
+			local ctx = make_ctx()
+			pcall(function()
+				r:boot(ctx)
+			end)
+			-- Clear log
+			while #log > 0 do
+				table.remove(log)
+			end
+
+			r:shutdown(ctx)
+
+			-- Only good_plugin should appear in shutdown log
+			local found_bad_shutdown = false
+			for _, v in ipairs(log) do
+				if v == "shutdown:bad_plugin" then
+					found_bad_shutdown = true
+				end
+			end
+			assert.is_false(found_bad_shutdown)
+		end)
+
+		it("tolerant mode via per-module config override", function()
+			local logged = {}
+			local r = Registry.new({
+				config = { error_modes = { registry = "tolerant" } },
+				log = function(msg)
+					table.insert(logged, msg)
+				end,
+			})
+			local log = {}
+			r:register("bad_plugin", make_failing_plugin("bad_plugin", log))
+
+			local ok = pcall(function()
+				r:boot(make_ctx())
+			end)
+			assert.is_true(ok)
+		end)
+	end)
+
+	describe("side enforcement", function()
+		it("dual-world: server plugin depending on client plugin errors", function()
+			local r = Registry.new()
+			local log = {}
+			r:register("client_plugin", make_plugin("client_plugin", log), { side = "client" })
+			r:register("server_plugin", make_plugin("server_plugin", log), {
+				side = "server",
+				deps = { "client_plugin" },
+			})
+
+			local ok, err = pcall(function()
+				r:boot(make_dual_ctx())
+			end)
+			assert.is_false(ok)
+			assert.is_truthy(err:find("side") or err:find("server") or err:find("client"))
+		end)
+
+		it("dual-world: client plugin depending on server plugin errors", function()
+			local r = Registry.new()
+			local log = {}
+			r:register("server_plugin", make_plugin("server_plugin", log), { side = "server" })
+			r:register("client_plugin", make_plugin("client_plugin", log), {
+				side = "client",
+				deps = { "server_plugin" },
+			})
+
+			local ok, err = pcall(function()
+				r:boot(make_dual_ctx())
+			end)
+			assert.is_false(ok)
+			assert.is_truthy(err:find("side") or err:find("server") or err:find("client"))
+		end)
+
+		it("dual-world: server plugin depending on server plugin is ok", function()
+			local r = Registry.new()
+			local log = {}
+			r:register("server_a", make_plugin("server_a", log), { side = "server" })
+			r:register("server_b", make_plugin("server_b", log), {
+				side = "server",
+				deps = { "server_a" },
+			})
+
+			assert.has_no.errors(function()
+				r:boot(make_dual_ctx())
+			end)
+		end)
+
+		it("dual-world: client plugin depending on client plugin is ok", function()
+			local r = Registry.new()
+			local log = {}
+			r:register("client_a", make_plugin("client_a", log), { side = "client" })
+			r:register("client_b", make_plugin("client_b", log), {
+				side = "client",
+				deps = { "client_a" },
+			})
+
+			assert.has_no.errors(function()
+				r:boot(make_dual_ctx())
+			end)
+		end)
+
+		it("dual-world: plugin with no side can depend on either side", function()
+			local r = Registry.new()
+			local log = {}
+			r:register("server_plugin", make_plugin("server_plugin", log), { side = "server" })
+			r:register("neutral_plugin", make_plugin("neutral_plugin", log), {
+				-- no side set
+				deps = { "server_plugin" },
+			})
+
+			assert.has_no.errors(function()
+				r:boot(make_dual_ctx())
+			end)
+		end)
+
+		it("single-world: side declarations are ignored (no enforcement)", function()
+			local r = Registry.new()
+			local log = {}
+			-- Same cross-side dep that would fail in dual-world is OK in single-world
+			r:register("client_plugin", make_plugin("client_plugin", log), { side = "client" })
+			r:register("server_plugin", make_plugin("server_plugin", log), {
+				side = "server",
+				deps = { "client_plugin" },
+			})
+
+			assert.has_no.errors(function()
+				r:boot(make_ctx()) -- make_ctx() uses single-world
+			end)
 		end)
 	end)
 end)
