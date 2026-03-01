@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Mirrors .github/workflows/ci.yml — keep in sync.
 # Run before pushing to catch CI failures locally.
+# CI triggers automatically on: push to main, any pull_request, or workflow_dispatch.
 set -euo pipefail
 
 echo "=== FactoryGame Full Check ==="
