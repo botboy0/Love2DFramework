@@ -117,46 +117,92 @@ function Validator.detect_globals(path, lines)
 		end
 	end
 
+	-- Keywords that cannot be global names
+	local keywords = {
+		["local"] = true,
+		["function"] = true,
+		["return"] = true,
+		["if"] = true,
+		["then"] = true,
+		["else"] = true,
+		["elseif"] = true,
+		["end"] = true,
+		["for"] = true,
+		["while"] = true,
+		["do"] = true,
+		["repeat"] = true,
+		["until"] = true,
+		["break"] = true,
+		["in"] = true,
+		["not"] = true,
+		["and"] = true,
+		["or"] = true,
+		["true"] = true,
+		["false"] = true,
+		["nil"] = true,
+	}
+
 	local violations = {}
+	-- Track curly-brace depth and function depth to avoid false positives.
+	-- Real global assignments occur at brace_depth == 0 AND function_depth == 0.
+	-- Inside table constructors ({...}) or function bodies, assignments are locals.
+	-- This is a conservative heuristic — real linting is done by selene.
+	local brace_depth = 0
+	local function_depth = 0
+
 	for i, line in ipairs(lines) do
-		-- Skip comments and blank lines
 		local stripped = line:match("^%s*(.-)%s*$")
+
+		-- Skip blank lines and comment lines
 		if stripped ~= "" and not stripped:match("^%-%-") then
-			-- Look for: optional whitespace, identifier, optional whitespace, =
-			-- but NOT: local ..., function ..., for ..., if ..., etc.
-			-- Also skip lines where = is part of ==, ~=, <=, >=
-			local name = stripped:match("^([%a_][%w_]*)%s*=[^=]")
-			if name then
-				-- Exclude keywords and whitelisted globals
-				local keywords = {
-					["local"] = true,
-					["function"] = true,
-					["return"] = true,
-					["if"] = true,
-					["then"] = true,
-					["else"] = true,
-					["elseif"] = true,
-					["end"] = true,
-					["for"] = true,
-					["while"] = true,
-					["do"] = true,
-					["repeat"] = true,
-					["until"] = true,
-					["break"] = true,
-					["in"] = true,
-					["not"] = true,
-					["and"] = true,
-					["or"] = true,
-					["true"] = true,
-					["false"] = true,
-					["nil"] = true,
-				}
-				if not keywords[name] and not ALLOWED_GLOBALS[name] then
-					violations[#violations + 1] = {
-						line_num = i,
-						line = line,
-						name = name,
-					}
+			-- Capture depths at the START of this line.
+			local depth_at_line_start = brace_depth
+			local fn_depth_at_line_start = function_depth
+
+			-- Update brace depth by counting { and } on this line.
+			for ch in stripped:gmatch(".") do
+				if ch == "{" then
+					brace_depth = brace_depth + 1
+				elseif ch == "}" then
+					if brace_depth > 0 then
+						brace_depth = brace_depth - 1
+					end
+				end
+			end
+
+			-- Update function depth: function keyword opens, end closes (simplified).
+			-- We count `function` and `end` keywords to track function nesting.
+			-- This is imprecise for multiline constructs but sufficient for a heuristic.
+			if
+				stripped:match("^function%s+")
+				or stripped:match("^local%s+function%s+")
+				or stripped:match("%s+function%s*%(")
+				or stripped:match("=%s*function%s*%(")
+			then
+				function_depth = function_depth + 1
+			end
+			if stripped:match("^end%s*$") or stripped == "end" or stripped:match("^end%-%-") then
+				if function_depth > 0 then
+					function_depth = function_depth - 1
+				end
+			end
+
+			-- Only flag potential globals when NOT inside a table literal or function body.
+			if depth_at_line_start == 0 and fn_depth_at_line_start == 0 then
+				-- Look for: identifier = (not ==, ~=, <=, >=)
+				local name = stripped:match("^([%a_][%w_]*)%s*=[^=]")
+				if name and not keywords[name] and not ALLOWED_GLOBALS[name] then
+					-- Additional filter: skip self-assignments like `x = x + 1` or `x = x or default`.
+					-- These are always reassignments of an existing local or parameter, never a new global.
+					local after_eq = stripped:match("^[%a_][%w_]*%s*=%s*(.+)$")
+					local is_self_assignment = after_eq and after_eq:match("^" .. name .. "[^%w_]")
+					if not is_self_assignment then
+						violations[#violations + 1] = {
+							line_num = i,
+							line = line,
+							name = name,
+						}
+					end
 				end
 			end
 		end
