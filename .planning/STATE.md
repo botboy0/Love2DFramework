@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-last_updated: "2026-03-01T18:13:30Z"
+status: unknown
+last_updated: "2026-03-01T18:18:34.846Z"
 progress:
   total_phases: 2
   completed_phases: 1
-  total_plans: 9
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,28 +23,28 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 2 of 2 (Core Infrastructure)
-Plan: 2 of 5 in current phase (02-02 complete)
+Plan: 3 of 5 in current phase (02-03 complete)
 Status: Phase 2 in progress
-Last activity: 2026-03-01 — Completed 02-02 (dual ECS worlds + context object)
+Last activity: 2026-03-01 — Completed 02-03 (plugin registry + transport layer)
 
-Progress: [██████░░░░] 66%
+Progress: [███████░░░] 72%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 4.3 min
-- Total execution time: 26 min
+- Total plans completed: 7
+- Average duration: 4.1 min
+- Total execution time: 31 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-devops-foundation | 4 | 22 min | 5.5 min |
-| 02-core-infrastructure | 2 | 6 min | 3 min |
+| 02-core-infrastructure | 3 | 11 min | 3.7 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (10 min), 01-03 (6 min), 01-04 (4 min), 02-01 (2 min), 02-02 (4 min)
+- Last 5 plans: 01-04 (4 min), 02-01 (2 min), 02-02 (4 min), 02-03 (5 min)
 - Trend: stable, fast
 
 *Updated after each plan completion*
@@ -73,6 +73,9 @@ Recent decisions affecting current work:
 - [Phase 02-core-infrastructure]: Tag-based world isolation — evolved.lua is a global singleton; ServerTag/ClientTag fragments on entities provide server/client query separation without forking the library
 - [Phase 02-core-infrastructure]: Module-level Worlds.ServerTag/ClientTag constants — shared across all Worlds.create() calls for cross-call query compatibility
 - [Phase 02-core-infrastructure]: Services.register() errors on duplicate — prevents silent overwrites at plugin boot time
+- [Phase 02-core-infrastructure]: Kahn's BFS for topological sort in registry: naturally detects cycles, stable within same depth
+- [Phase 02-core-infrastructure]: binser.deserialize returns (vals_array, n): receive() must index vals[1] to extract message
+- [Phase 02-core-infrastructure]: Injectable log function in Transport.new({ log = fn }) — allows test warning capture without print override
 
 ### Pending Todos
 
@@ -80,10 +83,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- Watch: bitser on Android must be verified early (interpreted Lua path) — defer to Phase 2 transport work
+- Watch: binser on Android must be verified early (interpreted Lua path) — transport layer complete; Android test deferred to later integration phase
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 02-02-PLAN.md — dual ECS worlds (tag-based isolation), shared component definitions, context object with services registry (37 tests)
+Stopped at: Completed 02-03-PLAN.md — plugin registry with topological sort (Kahn's BFS), transport layer with binser channels and networkable whitelist (37 tests)
 Resume file: None
