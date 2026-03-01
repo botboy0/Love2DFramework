@@ -1,38 +1,29 @@
 --- Tests for src/core/components.lua
---- Shared component fragment definitions used across both ECS worlds.
+--- Framework-agnostic component registry placeholder.
+--- Ships empty — each game defines its own fragment IDs.
 ---
 --- Run with: busted tests/core/components_spec.lua
 
 local Components = require("src.core.components")
 
 describe("Components", function()
-	it("exports Position fragment", function()
-		assert.is_not_nil(Components.Position)
+	it("returns a table", function()
+		assert.is_table(Components)
 	end)
 
-	it("exports Velocity fragment", function()
-		assert.is_not_nil(Components.Velocity)
+	it("ships empty — no pre-defined fragments", function()
+		assert.is_nil(next(Components))
 	end)
 
-	it("exports Health fragment", function()
-		assert.is_not_nil(Components.Health)
+	it("has no Position fragment", function()
+		assert.is_nil(Components.Position)
 	end)
 
-	it("fragment IDs are numbers", function()
-		assert.is_number(Components.Position)
-		assert.is_number(Components.Velocity)
-		assert.is_number(Components.Health)
+	it("has no Velocity fragment", function()
+		assert.is_nil(Components.Velocity)
 	end)
 
-	it("all fragment IDs are unique", function()
-		assert.are_not.equal(Components.Position, Components.Velocity)
-		assert.are_not.equal(Components.Velocity, Components.Health)
-		assert.are_not.equal(Components.Position, Components.Health)
-	end)
-
-	it("fragment IDs are positive integers", function()
-		assert.is_true(Components.Position > 0)
-		assert.is_true(Components.Velocity > 0)
-		assert.is_true(Components.Health > 0)
+	it("has no Health fragment", function()
+		assert.is_nil(Components.Health)
 	end)
 end)
