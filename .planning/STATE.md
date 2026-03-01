@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-03-01T13:13:32.409Z"
+status: in_progress
+last_updated: "2026-03-01T18:47:34Z"
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 9
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,33 +18,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Discovery-driven progression loop — every new material reveals recipe hints, pulling the player deeper into exploration and automation
-**Current focus:** Phase 1 - DevOps Foundation
+**Current focus:** Phase 2 - Core Infrastructure
 
 ## Current Position
 
-Phase: 1 of 2 (DevOps Foundation)
-Plan: 4 of 4 in current phase (phase complete)
-Status: Phase 1 complete
-Last activity: 2026-03-01 — Completed 01-04 (GitHub Actions CI pipeline)
+Phase: 2 of 2 (Core Infrastructure)
+Plan: 1 of 5 in current phase (02-01 complete)
+Status: Phase 2 in progress
+Last activity: 2026-03-01 — Completed 02-01 (vendor libraries + event bus)
 
-Progress: [████░░░░░░] 40%
+Progress: [█████░░░░░] 55%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 5.5 min
-- Total execution time: 22 min
+- Total plans completed: 5
+- Average duration: 4.4 min
+- Total execution time: 24 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-devops-foundation | 4 | 22 min | 5.5 min |
+| 02-core-infrastructure | 1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min), 01-02 (10 min), 01-03 (6 min), 01-04 (4 min)
-- Trend: establishing baseline
+- Last 5 plans: 01-01 (2 min), 01-02 (10 min), 01-03 (6 min), 01-04 (4 min), 02-01 (2 min)
+- Trend: improving
 
 *Updated after each plan completion*
 
@@ -66,6 +67,9 @@ Recent decisions affecting current work:
 - [Phase 01-devops-foundation]: love2d_busted.yml combined selene std with assert: any: true — allows busted extended assert API in test files
 - [Phase 01-devops-foundation]: CI job named "Lint, Format, Test, Validate" — exact name required for GitHub branch protection status check
 - [Phase 01-devops-foundation]: Pinned tool versions in CI (selene 0.27.1, stylua 0.20.0) — prevents spurious failures on upstream tool updates
+- [Phase 02-core-infrastructure]: Injectable logger Bus.new(log_fn) — selene denies global reassignment of print; injectable logger allows test capture without global mutation
+- [Phase 02-core-infrastructure]: Queue snapshot in flush() — self._queue replaced with {} before dispatch begins for clean isolation
+- [Phase 02-core-infrastructure]: pcall per handler — each handler individually wrapped so one error cannot abort remaining handlers
 
 ### Pending Todos
 
@@ -78,5 +82,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 01-04-PLAN.md — GitHub Actions CI pipeline, full-check sync, branch protection docs
+Stopped at: Completed 02-01-PLAN.md — evolved.lua/binser vendored, deferred-dispatch event bus implemented with TDD (17 tests)
 Resume file: None
