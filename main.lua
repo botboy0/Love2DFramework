@@ -1,8 +1,5 @@
-function love.load()
-end
+function love.load() end
 
-function love.update(_dt)
-end
+function love.update(_dt) end
 
-function love.draw()
-end
+function love.draw() end
