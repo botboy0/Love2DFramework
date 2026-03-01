@@ -1,0 +1,6 @@
+std = "love2d_test"
+
+[rules]
+unscoped_variables = "deny"
+unused_variable = "warn"
+shadowing = "warn"
