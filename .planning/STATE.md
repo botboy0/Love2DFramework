@@ -1,63 +1,62 @@
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Foundation
-status: completed
-last_updated: "2026-03-01"
-progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
----
-
 # Project State
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-03-01)
 
-**Core value:** Discovery-driven progression loop — every new material reveals recipe hints, pulling the player deeper into exploration and automation
-**Current focus:** Planning next milestone
+**Core value:** A framework that enforces clean architecture by default — ECS-only game logic, event-bus-only communication, isolated plugins — so games stay maintainable as they grow.
+**Current focus:** Phase 1 — Core Infrastructure
 
 ## Current Position
 
-Phase: v1.0 complete
-Status: Milestone shipped
-Last activity: 2026-03-01 — v1.0 Foundation milestone completed and archived
+Phase: 1 of 7 (Core Infrastructure)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-03-01 — Roadmap created; all 29 v1 requirements mapped to 7 phases
 
-Progress: [##########] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 5.1 min
-- Total execution time: 41 min
+- Total plans completed: 0
+- Average duration: -
+- Total execution time: 0 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-devops-foundation | 4 | 22 min | 5.5 min |
-| 02-core-infrastructure | 4 | 21 min | 5.25 min |
+| - | - | - | - |
+
+**Recent Trend:**
+- Last 5 plans: -
+- Trend: -
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [Init]: DevOps stack is complete and carried forward — Phase 1 starts on framework code directly
+- [Init]: Example game deferred (moved to Out of Scope for v1) — Phase 7 is Documentation, not a game
+- [Init]: Transport (CORE-09) is in Phase 1 Core Infrastructure alongside bus/registry/worlds
 
 ### Pending Todos
 
-None.
+None yet.
 
 ### Blockers/Concerns
 
-- Watch: binser on Android must be verified early (interpreted Lua path) — transport layer complete; Android test deferred to later integration phase
+- [Research flag] Phase 1: Deferred bus re-entrancy guard edge cases with evolved.lua query iteration — worth a spike before committing to the design
+- [Research flag] Phase 6 (if transport is demonstrated): Fragment ID thread divergence in love.thread entry points needs validation during implementation
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: v1.0 milestone completed and archived
+Stopped at: Roadmap created — all planning files written, ready to begin Phase 1 planning
 Resume file: None
