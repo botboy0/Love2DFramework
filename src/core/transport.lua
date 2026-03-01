@@ -132,4 +132,39 @@ function Transport:receive_all()
 	return messages
 end
 
+--- Null object transport stub.
+--- All methods are no-ops. Used when transport is disabled so plugins
+--- never need to guard with `if ctx.transport then`.
+--- Transport.Null:is_networkable() always returns false.
+--- Transport.Null:receive() always returns nil.
+--- Transport.Null:receive_all() always returns an empty table.
+local NullTransport = {}
+NullTransport.__index = NullTransport
+
+function NullTransport.new()
+	return setmetatable({}, NullTransport)
+end
+
+function NullTransport:mark_networkable(_event_name) end
+
+function NullTransport:is_networkable(_event_name)
+	return false
+end
+
+function NullTransport:queue(_event_name, _data) end
+
+function NullTransport:send(_message) end
+
+function NullTransport:flush() end
+
+function NullTransport:receive()
+	return nil
+end
+
+function NullTransport:receive_all()
+	return {}
+end
+
+Transport.Null = NullTransport
+
 return Transport
