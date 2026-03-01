@@ -277,7 +277,7 @@ CLAUDE.md covers architectural rules that static analysis cannot catch — conce
 
 ### CI Pipeline
 
-CI runs on every push and pull request to `main`. The pipeline runs four sequential steps:
+CI runs on every pull request and on pushes to `main`. It can also be triggered manually from the GitHub Actions UI via `workflow_dispatch`. The pipeline runs four sequential steps:
 
 1. **Lint** — `selene src/ main.lua conf.lua`
 2. **Format check** — `stylua --check src/ main.lua conf.lua`
