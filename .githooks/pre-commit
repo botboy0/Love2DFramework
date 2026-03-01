@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Get staged Lua files
+STAGED_LUA=$(git diff --cached --name-only --diff-filter=ACM | grep '\.lua$' || true)
+
+if [ -z "$STAGED_LUA" ]; then
+    exit 0
+fi
+
+# Filter out lib/ (vendored code)
+STAGED_LUA=$(echo "$STAGED_LUA" | grep -v '^lib/' || true)
+
+if [ -z "$STAGED_LUA" ]; then
+    exit 0
+fi
+
+echo "Pre-commit: checking $(echo "$STAGED_LUA" | wc -l) Lua file(s)..."
+
+# Step 1: stylua auto-format and re-stage
+echo "  Running stylua auto-format..."
+echo "$STAGED_LUA" | xargs stylua
+echo "$STAGED_LUA" | xargs git add
+
+# Step 2: selene lint (after formatting)
+echo "  Running selene lint..."
+SELENE_EXIT=0
+echo "$STAGED_LUA" | xargs selene || SELENE_EXIT=$?
+
+if [ "$SELENE_EXIT" -ne 0 ]; then
+    echo ""
+    echo "Pre-commit FAILED: selene found lint errors."
+    echo "Fix the issues above and try again."
+    exit 1
+fi
+
+echo "Pre-commit: all checks passed."
