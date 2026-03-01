@@ -27,9 +27,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. CI runs lint → test → build on every push and hard-blocks merge on any failure
   4. CLAUDE.md exists and documents the architectural rules Claude must follow when generating code
   5. The architecture validator script detects and reports globals, cross-plugin imports, and client-side game logic
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 - [x] 01-01-PLAN.md — Project scaffolding + selene linting + stylua formatting
-- [ ] 01-02-PLAN.md — Pre-commit hooks + busted test framework
+- [x] 01-02-PLAN.md — Pre-commit hooks + busted test framework
 - [ ] 01-03-PLAN.md — CLAUDE.md architectural rules + architecture validator
 - [ ] 01-04-PLAN.md — GitHub Actions CI pipeline
 
@@ -52,5 +52,5 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. DevOps Foundation | 1/4 | In Progress|  |
+| 1. DevOps Foundation | 2/4 | In Progress|  |
 | 2. Core Infrastructure | 0/TBD | Not started | - |

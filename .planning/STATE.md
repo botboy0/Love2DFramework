@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 1 of 2 (DevOps Foundation)
-Plan: 1 of TBD in current phase
+Plan: 3 of TBD in current phase
 Status: In progress
-Last activity: 2026-03-01 — Completed 01-01 (scaffold + linting + formatting)
+Last activity: 2026-03-01 — Completed 01-02 (pre-commit hooks + busted test framework)
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 2 min
-- Total execution time: 2 min
+- Total plans completed: 2
+- Average duration: 6 min
+- Total execution time: 12 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-devops-foundation | 1 | 2 min | 2 min |
+| 01-devops-foundation | 2 | 12 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min)
+- Last 5 plans: 01-01 (2 min), 01-02 (10 min)
 - Trend: establishing baseline
 
 *Updated after each plan completion*
@@ -47,6 +47,8 @@ Recent decisions affecting current work:
 - ECS-first: All game logic must live in ECS systems, nowhere else
 - selene rule name: Use `unscoped_variables = "deny"` not `global_usage` — correct selene 0.30.0 rule name for undeclared globals
 - Unused param convention: Prefix with `_` (e.g., `_dt`) to satisfy selene unused_variable rule
+- Test selene config: Test files need separate selene.toml (love2d_busted std) — lua51 base assert definition conflicts with busted assert.is_true/is_table when using + combinator; combined yml file (love2d_busted.yml) solves this cleanly
+- Pre-commit split: Pre-commit hook routes test files to tests/selene.toml and src/root files to root selene.toml
 
 ### Pending Todos
 
@@ -59,5 +61,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 01-01-PLAN.md — scaffold, selene, and stylua configured
+Stopped at: Completed 01-02-PLAN.md — pre-commit hooks, busted framework, plugin harness, full-check script
 Resume file: None
