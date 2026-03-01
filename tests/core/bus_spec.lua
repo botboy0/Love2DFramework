@@ -221,4 +221,133 @@ describe("Bus", function()
 			assert.equal(payload, received_data)
 		end)
 	end)
+
+	describe("error_mode", function()
+		it("defaults to tolerant mode when no opts given", function()
+			local bus = Bus.new()
+			assert.equal("tolerant", bus._error_mode)
+		end)
+
+		it("stores tolerant mode when opts.error_mode is 'tolerant'", function()
+			local bus = Bus.new({ error_mode = "tolerant" })
+			assert.equal("tolerant", bus._error_mode)
+		end)
+
+		it("stores strict mode when opts.error_mode is 'strict'", function()
+			local bus = Bus.new({ error_mode = "strict" })
+			assert.equal("strict", bus._error_mode)
+		end)
+
+		it("backward compat: Bus.new(fn) treats function as log with tolerant mode", function()
+			local logged = {}
+			local bus = Bus.new(function(msg)
+				table.insert(logged, msg)
+			end)
+			assert.equal("tolerant", bus._error_mode)
+			-- Verify the log function is wired up
+			bus:on("ev", function(_data)
+				error("boom")
+			end)
+			bus:emit("ev", {})
+			bus:flush()
+			assert.is_true(#logged > 0)
+		end)
+
+		it("opts table: Bus.new({ log = fn, error_mode = 'strict' }) works", function()
+			local logged = {}
+			local bus = Bus.new({
+				log = function(msg)
+					table.insert(logged, msg)
+				end,
+				error_mode = "strict",
+			})
+			assert.equal("strict", bus._error_mode)
+		end)
+
+		it("tolerant: bad handler logs error and second handler still fires", function()
+			local log_calls = {}
+			local bus = Bus.new({
+				log = function(msg)
+					table.insert(log_calls, msg)
+				end,
+				error_mode = "tolerant",
+			})
+			local second_called = false
+
+			bus:on("ev", function(_data)
+				error("tolerant error")
+			end)
+			bus:on("ev", function(_data)
+				second_called = true
+			end)
+
+			bus:emit("ev", {})
+			bus:flush()
+
+			assert.is_true(second_called)
+			local error_logged = false
+			for _, msg in ipairs(log_calls) do
+				if msg:find("tolerant error") then
+					error_logged = true
+					break
+				end
+			end
+			assert.is_true(error_logged)
+		end)
+
+		it("strict: bad handler causes flush to error", function()
+			local bus = Bus.new({ error_mode = "strict" })
+
+			bus:on("ev", function(_data)
+				error("strict error")
+			end)
+
+			bus:emit("ev", {})
+			assert.has_error(function()
+				bus:flush()
+			end)
+		end)
+
+		it("strict: second handler does NOT fire when first handler errors", function()
+			local bus = Bus.new({ error_mode = "strict" })
+			local second_called = false
+
+			bus:on("ev", function(_data)
+				error("strict abort")
+			end)
+			bus:on("ev", function(_data)
+				second_called = true
+			end)
+
+			bus:emit("ev", {})
+			pcall(function()
+				bus:flush()
+			end)
+
+			assert.is_false(second_called)
+		end)
+
+		it("strict: after error, bus._flushing is reset so bus can emit again", function()
+			local bus = Bus.new({ error_mode = "strict" })
+
+			bus:on("ev", function(_data)
+				error("strict abort")
+			end)
+
+			bus:emit("ev", {})
+			pcall(function()
+				bus:flush()
+			end)
+
+			-- _flushing must be false so subsequent emits are not discarded
+			assert.is_false(bus._flushing)
+			-- Should be able to emit and flush again without re-entrancy guard firing
+			local second_bus_log = {}
+			local bus2 = Bus.new(function(msg)
+				table.insert(second_bus_log, msg)
+			end)
+			bus2:emit("new_ev", {})
+			assert.equal(1, #bus2._queue)
+		end)
+	end)
 end)

@@ -4,9 +4,18 @@
 -- is called. This prevents re-entrancy bugs where handlers trigger cascading
 -- event chains mid-tick.
 --
+-- Error modes:
+--   "tolerant" (default) — handler errors are caught, logged, and remaining
+--     handlers for that event continue to fire. Bus is always safe to use.
+--   "strict" — handler errors propagate up from flush(). Remaining handlers
+--     for that event do NOT fire. The _flushing flag is reset before re-raising
+--     so the bus is not left in a stuck state. Recommended for development.
+--
 -- Usage:
 --   local Bus = require("src.core.bus")
---   local bus = Bus.new()
+--   local bus = Bus.new()                            -- tolerant, print log
+--   local bus = Bus.new({ error_mode = "strict" })   -- strict mode
+--   local bus = Bus.new(my_log_fn)                   -- backward compat (tolerant)
 --   bus:on("resource_collected", function(data) ... end)
 --   bus:emit("resource_collected", { amount = 1 })
 --   bus:flush()  -- dispatches all queued events
@@ -15,14 +24,33 @@ local Bus = {}
 Bus.__index = Bus
 
 --- Create a new Bus instance.
--- @param log optional logging function (defaults to print); used for warnings and errors
+-- @param opts table|function|nil
+--   If a table: opts.log (logging fn, default print), opts.error_mode ("strict"|"tolerant", default "tolerant")
+--   If a function: treated as the log function with tolerant mode (backward compat)
+--   If nil: uses print for logging and tolerant mode
 -- @return Bus instance
-function Bus.new(log)
+function Bus.new(opts)
+	local log_fn
+	local error_mode
+
+	if type(opts) == "function" then
+		-- Backward compatibility: Bus.new(log_fn)
+		log_fn = opts
+		error_mode = "tolerant"
+	elseif type(opts) == "table" then
+		log_fn = opts.log or print
+		error_mode = opts.error_mode or "tolerant"
+	else
+		log_fn = print
+		error_mode = "tolerant"
+	end
+
 	return setmetatable({
 		_queue = {},
 		_handlers = {},
 		_flushing = false,
-		_log = log or print,
+		_log = log_fn,
+		_error_mode = error_mode,
 	}, Bus)
 end
 
@@ -68,8 +96,14 @@ end
 
 --- Dispatch all queued events to their registered handlers.
 -- Events are dispatched in emit order. Handlers fire in registration order.
--- Handler errors are caught, logged, and do not prevent remaining handlers from running.
--- The queue is cleared after all events are dispatched.
+--
+-- In tolerant mode (default): handler errors are caught, logged, and remaining
+-- handlers continue to fire.
+--
+-- In strict mode: a handler error re-raises from flush(). Remaining handlers
+-- for that event do NOT fire. The _flushing flag is reset before re-raising.
+--
+-- The queue is cleared after all events are dispatched (or on error in strict mode).
 function Bus:flush()
 	self._flushing = true
 
@@ -85,7 +119,13 @@ function Bus:flush()
 			for j = 1, #list do
 				local ok, err = pcall(list[j], data)
 				if not ok then
-					self._log("[Bus] Handler error for event '" .. event .. "': " .. tostring(err))
+					if self._error_mode == "strict" then
+						-- Reset flushing flag before re-raising so the bus is not stuck
+						self._flushing = false
+						error(err, 0)
+					else
+						self._log("[Bus] Handler error for event '" .. event .. "': " .. tostring(err))
+					end
 				end
 			end
 		end
