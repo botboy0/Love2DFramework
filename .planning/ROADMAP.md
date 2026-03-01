@@ -27,7 +27,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. CI runs lint → test → build on every push and hard-blocks merge on any failure
   4. CLAUDE.md exists and documents the architectural rules Claude must follow when generating code
   5. The architecture validator script detects and reports globals, cross-plugin imports, and client-side game logic
-**Plans**: TBD
+**Plans:** 4 plans
+- [ ] 01-01-PLAN.md — Project scaffolding + selene linting + stylua formatting
+- [ ] 01-02-PLAN.md — Pre-commit hooks + busted test framework
+- [ ] 01-03-PLAN.md — CLAUDE.md architectural rules + architecture validator
+- [ ] 01-04-PLAN.md — GitHub Actions CI pipeline
 
 ### Phase 2: Core Infrastructure
 **Goal**: The shared runtime exists — event bus, plugin registry, dual ECS worlds, and solo transport are working and tested, with a canonical plugin example as the reference for all future game plugins
@@ -48,5 +52,5 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. DevOps Foundation | 0/TBD | Not started | - |
+| 1. DevOps Foundation | 0/4 | Not started | - |
 | 2. Core Infrastructure | 0/TBD | Not started | - |
