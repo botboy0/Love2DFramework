@@ -21,9 +21,9 @@ Requirements for initial release. DevOps + infrastructure foundation — no game
 
 - [x] **INFRA-01**: Deferred-dispatch event bus with queue + flush-per-tick and re-entrancy guard
 - [ ] **INFRA-02**: Plugin registry with standard `plugin:init(ctx)` API; `ctx = { world, bus, config, services }`
-- [ ] **INFRA-03**: Dual evolved.lua ECS worlds (server simulation + client rendering)
+- [x] **INFRA-03**: Dual evolved.lua ECS worlds (server simulation + client rendering)
 - [ ] **INFRA-04**: love.thread channel transport for client-server communication (solo mode)
-- [ ] **INFRA-05**: Context object pattern — single `ctx` passed to all plugins
+- [x] **INFRA-05**: Context object pattern — single `ctx` passed to all plugins
 - [ ] **INFRA-06**: Plugin isolation test template — each plugin loadable and testable without sibling plugins
 - [ ] **INFRA-07**: Canonical plugin example (`examples/canonical_plugin.lua`) maintained as reference implementation
 
@@ -106,9 +106,9 @@ Deferred to next milestone. Game features (Age 0: beach to copper tool).
 | DEV-07 | Phase 1 | Complete |
 | INFRA-01 | Phase 2 | Complete |
 | INFRA-02 | Phase 2 | Pending |
-| INFRA-03 | Phase 2 | Pending |
+| INFRA-03 | Phase 2 | Complete |
 | INFRA-04 | Phase 2 | Pending |
-| INFRA-05 | Phase 2 | Pending |
+| INFRA-05 | Phase 2 | Complete |
 | INFRA-06 | Phase 2 | Pending |
 | INFRA-07 | Phase 2 | Pending |
 
