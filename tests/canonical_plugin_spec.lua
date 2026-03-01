@@ -3,7 +3,10 @@
 ---
 --- Run with: busted tests/canonical_plugin_spec.lua
 
+local Bus = require("src.core.bus")
 local CanonicalPlugin = require("examples.canonical_plugin")
+local Context = require("src.core.context")
+local Worlds = require("src.core.worlds")
 local evolved = require("lib.evolved")
 local harness = require("tests.helpers.plugin_harness")
 
@@ -17,6 +20,15 @@ local function destroy_all(entities)
 		end
 	end
 	evolved.commit()
+end
+
+--- Create a single-world context for single-world mode tests.
+--- ctx.worlds.server will be nil in this mode.
+local function create_single_world_ctx()
+	local bus = Bus.new()
+	local worlds = Worlds.create() -- single-world, no dual=true
+	local ctx = Context.new({ worlds = worlds, bus = bus, config = {} })
+	return ctx
 end
 
 describe("CanonicalPlugin", function()
@@ -72,6 +84,17 @@ describe("CanonicalPlugin", function()
 			local q = svc.get_movement_query()
 			assert.is_not_nil(q)
 		end)
+
+		it("succeeds in single-world mode (ctx.worlds.server is nil)", function()
+			local single_ctx = create_single_world_ctx()
+			CanonicalPlugin._last_spawned = nil
+			CanonicalPlugin._movement_query = nil
+			CanonicalPlugin.bus = nil
+			CanonicalPlugin.worlds = nil
+			assert.has_no_error(function()
+				CanonicalPlugin:init(single_ctx)
+			end)
+		end)
 	end)
 
 	describe("update", function()
@@ -126,6 +149,30 @@ describe("CanonicalPlugin", function()
 			local pos = evolved.get(e, CanonicalPlugin.Position)
 			assert.are.equal(5.0, pos.x)
 			assert.are.equal(2.0, pos.y)
+		end)
+
+		it("updates entities in single-world mode without error", function()
+			local single_ctx = create_single_world_ctx()
+			CanonicalPlugin._last_spawned = nil
+			CanonicalPlugin._movement_query = nil
+			CanonicalPlugin.bus = nil
+			CanonicalPlugin.worlds = nil
+			CanonicalPlugin:init(single_ctx)
+
+			-- In single-world mode, spawn via worlds:spawn() (no server tag)
+			local e = single_ctx.worlds:spawn({
+				[CanonicalPlugin.Position] = { x = 1.0, y = 2.0 },
+				[CanonicalPlugin.Velocity] = { dx = 3.0, dy = 4.0 },
+			})
+			table.insert(spawned, e)
+
+			assert.has_no_error(function()
+				CanonicalPlugin:update(1.0)
+			end)
+
+			local pos = evolved.get(e, CanonicalPlugin.Position)
+			assert.are.equal(4.0, pos.x)
+			assert.are.equal(6.0, pos.y)
 		end)
 	end)
 

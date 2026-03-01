@@ -3,6 +3,15 @@
 --- Demonstrates: init with ctx, component usage, system query, event handling,
 --- service registration, and shutdown stub.
 ---
+--- This plugin works in both single-world and dual-world modes:
+---   - Single-world (Worlds.create()): query covers the entire world.
+---   - Dual-world (Worlds.create({ dual = true })): query scoped to server world via tag.
+---
+--- Component fragments are defined locally here because examples/ is a self-contained
+--- reference — not loaded at runtime. In a real game, fragments live in
+--- src/core/components.lua and are shared across plugins. The canonical plugin
+--- defines its own for demonstration purposes only.
+---
 --- All future plugins follow this pattern. See CLAUDE.md for architectural rules.
 ---
 --- NOTE: examples/ is NOT loaded at runtime — this is a reference only.
@@ -15,9 +24,9 @@ local CanonicalPlugin = {}
 CanonicalPlugin.name = "canonical"
 CanonicalPlugin.deps = {} -- no external dependencies for the example
 
---- Fragment IDs for this plugin's components.
---- Defined at module level — each game defines its own fragments in components.lua.
---- This example plugin defines its own since it is a self-contained reference.
+--- Example-only component fragments.
+--- In a real game, these would be defined in src/core/components.lua.
+--- The canonical plugin defines its own for demonstration purposes only.
 --- Exposed on the module table so tests can spawn entities with the correct fragments.
 CanonicalPlugin.Position, CanonicalPlugin.Velocity = evolved.id(2)
 local Position = CanonicalPlugin.Position
@@ -25,7 +34,7 @@ local Velocity = CanonicalPlugin.Velocity
 
 --- Initialize the plugin.
 --- Called by the plugin registry during boot in dependency order.
---- @param ctx table { worlds, bus, config, services }
+--- @param ctx table { worlds, bus, config, services, transport }
 function CanonicalPlugin:init(ctx)
 	self.bus = ctx.bus
 	self.worlds = ctx.worlds
@@ -35,10 +44,14 @@ function CanonicalPlugin:init(ctx)
 	-- to remain self-contained. In a real game: local C = require("src.core.components")
 	-- then use C.Position, C.Velocity, etc.
 
-	-- 2. System query — build a query for server entities with Position + Velocity.
-	-- ServerTag scopes this query to the server world only.
-	-- ctx.worlds must be a dual-world handle (Worlds.create({ dual = true })).
-	self._movement_query = evolved.builder():include(Position, Velocity):include(ctx.worlds.server.tag):build()
+	-- 2. System query — build a query for entities with Position + Velocity.
+	-- In dual-world mode, scope query to server world via its tag.
+	-- In single-world mode (ctx.worlds.server is nil), build without a world tag.
+	local builder = evolved.builder():include(Position, Velocity)
+	if ctx.worlds.server then
+		builder:include(ctx.worlds.server.tag)
+	end
+	self._movement_query = builder:build()
 
 	-- 3. Event handling — subscribe to bus events.
 	-- Handlers are closures; self is captured for state access.
@@ -56,7 +69,8 @@ function CanonicalPlugin:init(ctx)
 end
 
 --- System update — called each tick by the game loop.
---- Processes all server entities with Position + Velocity and integrates motion.
+--- Processes all entities with Position + Velocity and integrates motion.
+--- In dual-world mode, only server-tagged entities are processed.
 --- @param dt number Delta time in seconds
 function CanonicalPlugin:update(dt)
 	for chunk, _entities, count in evolved.execute(self._movement_query) do
