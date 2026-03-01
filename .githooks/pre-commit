@@ -23,9 +23,21 @@ echo "$STAGED_LUA" | xargs stylua
 echo "$STAGED_LUA" | xargs git add
 
 # Step 2: selene lint (after formatting)
+# Test files use busted globals — lint with tests/selene.toml
+# Source/root files use standard love2d selene.toml
 echo "  Running selene lint..."
 SELENE_EXIT=0
-echo "$STAGED_LUA" | xargs selene || SELENE_EXIT=$?
+
+SRC_FILES=$(echo "$STAGED_LUA" | grep -v '^tests/' || true)
+TEST_FILES=$(echo "$STAGED_LUA" | grep '^tests/' || true)
+
+if [ -n "$SRC_FILES" ]; then
+    echo "$SRC_FILES" | xargs selene || SELENE_EXIT=$?
+fi
+
+if [ -n "$TEST_FILES" ]; then
+    echo "$TEST_FILES" | xargs selene --config tests/selene.toml || SELENE_EXIT=$?
+fi
 
 if [ "$SELENE_EXIT" -ne 0 ]; then
     echo ""
