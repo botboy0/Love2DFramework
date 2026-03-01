@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Mirrors .github/workflows/ci.yml — keep in sync.
+# Run before pushing to catch CI failures locally.
 set -euo pipefail
 
 echo "=== FactoryGame Full Check ==="
@@ -22,14 +24,10 @@ busted
 echo "  PASS"
 echo ""
 
-# Step 4: Architecture validator (added by Plan 03)
+# Step 4: Architecture validator
 echo "[4/4] architecture validator..."
-if [ -f "scripts/validate_architecture.lua" ]; then
-    lua scripts/validate_architecture.lua
-    echo "  PASS"
-else
-    echo "  SKIP (validator not yet created)"
-fi
+lua scripts/validate_architecture.lua
+echo "  PASS"
 echo ""
 
 echo "=== All checks passed ==="

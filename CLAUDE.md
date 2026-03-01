@@ -270,3 +270,37 @@ tests/plugins/movement/systems/movement_system_spec.lua
 | `busted` | Unit and integration test correctness |
 
 CLAUDE.md covers architectural rules that static analysis cannot catch — conceptual violations like "using a global that was declared but shouldn't be shared" or "putting business logic in the wrong layer."
+
+---
+
+## CI & Branch Protection
+
+### CI Pipeline
+
+CI runs on every push and pull request to `main`. The pipeline runs four sequential steps:
+
+1. **Lint** — `selene src/ main.lua conf.lua`
+2. **Format check** — `stylua --check src/ main.lua conf.lua`
+3. **Tests** — `busted`
+4. **Architecture validation** — `lua scripts/validate_architecture.lua`
+
+Any step failure causes the entire pipeline to fail (non-zero exit). The pipeline is defined in `.github/workflows/ci.yml`.
+
+### Local Pre-Push Check
+
+Run `scripts/full-check.sh` before pushing to catch CI failures locally. This script mirrors `.github/workflows/ci.yml` exactly — keep them in sync if either changes.
+
+### Branch Protection Setup (Manual — GitHub UI)
+
+Branch protection must be configured manually on GitHub after the repository is created:
+
+1. Go to **Settings** → **Branches**
+2. Click **Add branch protection rule**
+3. Set branch name pattern to `main`
+4. Check **Require status checks to pass before merging**
+5. Search for and select the status check: **"Lint, Format, Test, Validate"**
+6. Optionally enable **Require branches to be up to date before merging**
+7. Set **No bypass** (do not allow administrators to bypass)
+8. Save the rule
+
+Without this rule, CI failures do not block merging. The status check name must match exactly: `Lint, Format, Test, Validate`.
