@@ -12,7 +12,7 @@ Requirements for initial release. DevOps + infrastructure foundation — no game
 - [x] **DEV-01**: selene linting with `global_usage = "deny"` and custom std definition whitelisting only `love`, `world`, `eventBus`, `registry`
 - [x] **DEV-02**: stylua formatting enforced on all Lua source files
 - [x] **DEV-03**: Pre-commit hooks running selene + stylua; hard-block non-conforming commits
-- [ ] **DEV-04**: GitHub Actions CI pipeline: lint → test → build; hard-block on failure
+- [x] **DEV-04**: GitHub Actions CI pipeline: lint → test → build; hard-block on failure
 - [x] **DEV-05**: busted test framework with plugin test harness (Phase 1: stub world/bus/registry with plain Lua tables; Phase 2: full ECS lifecycle hooks via evolved.lua)
 - [x] **DEV-06**: CLAUDE.md with architectural enforcement rules (ECS-only logic, event-bus-only communication, plugin isolation)
 - [x] **DEV-07**: Architecture validator script (`validate_architecture.lua`) in CI checking for globals, cross-plugin imports, client-side game logic
@@ -100,7 +100,7 @@ Deferred to next milestone. Game features (Age 0: beach to copper tool).
 | DEV-01 | Phase 1 | Complete |
 | DEV-02 | Phase 1 | Complete |
 | DEV-03 | Phase 1 | Complete |
-| DEV-04 | Phase 1 | Pending |
+| DEV-04 | Phase 1 | Complete |
 | DEV-05 | Phase 1 | Complete |
 | DEV-06 | Phase 1 | Complete |
 | DEV-07 | Phase 1 | Complete |
