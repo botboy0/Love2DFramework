@@ -260,11 +260,12 @@ describe("Validator.detect_missing_tests", function()
 	end)
 
 	it("maps src path to tests path correctly", function()
-		-- Verify the path mapping formula
-		local violations = Validator.detect_missing_tests({ "src/core/bus.lua" })
-		-- tests/core/bus_spec.lua does not exist (clean project has only .gitkeep)
+		-- Verify the path mapping formula using a path that has no spec file.
+		-- src/core/bus.lua has tests/core/bus_spec.lua (created in Phase 2),
+		-- so we use a hypothetical path that is guaranteed not to have a spec.
+		local violations = Validator.detect_missing_tests({ "src/nonexistent_module.lua" })
 		assert.equals(1, #violations)
-		assert.equals("tests/core/bus_spec.lua", violations[1].expected_test)
+		assert.equals("tests/nonexistent_module_spec.lua", violations[1].expected_test)
 	end)
 end)
 
