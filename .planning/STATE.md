@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 1 of 7 (Core Infrastructure)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-01 — Roadmap created; all 29 v1 requirements mapped to 7 phases
+Plan: 2 of ? in current phase
+Status: In progress
+Last activity: 2026-03-01 — Completed 01-02 (Bus error_mode + NullTransport)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] ~14%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 2
+- Average duration: ~2 min/plan
+- Total execution time: ~4 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-core-infrastructure | 2 | ~4 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+- Last 5 plans: 01-01, 01-02
+- Trend: On track
 
 *Updated after each plan completion*
 
@@ -45,6 +45,9 @@ Recent decisions affecting current work:
 - [Init]: DevOps stack is complete and carried forward — Phase 1 starts on framework code directly
 - [Init]: Example game deferred (moved to Out of Scope for v1) — Phase 7 is Documentation, not a game
 - [Init]: Transport (CORE-09) is in Phase 1 Core Infrastructure alongside bus/registry/worlds
+- [01-02]: Bus strict mode uses pcall + error(err, 0) re-raise so _flushing is always reset before error propagates
+- [01-02]: Bus.new(fn) backward compat preserved — function arg treated as log with tolerant mode; opts table is new preferred form
+- [01-02]: Transport.Null exposed on Transport table (not separate module) — callers require only src.core.transport
 
 ### Pending Todos
 
@@ -58,5 +61,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Roadmap created — all planning files written, ready to begin Phase 1 planning
+Stopped at: Completed 01-02-PLAN.md — Bus error_mode + NullTransport complete, ready for 01-03
 Resume file: None
