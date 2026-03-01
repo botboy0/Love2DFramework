@@ -12,7 +12,7 @@ v1 delivers the enforcement foundation that prevents the code quality degradatio
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: DevOps Foundation** - Linting, formatting, testing, CI, and architectural enforcement rules in place before any game code
+- [x] **Phase 1: DevOps Foundation** - Linting, formatting, testing, CI, and architectural enforcement rules in place before any game code (completed 2026-03-01)
 - [ ] **Phase 2: Core Infrastructure** - Event bus, plugin registry, ECS worlds, transport layer, and canonical plugin example
 
 ## Phase Details
@@ -27,7 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. CI runs lint → test → build on every push and hard-blocks merge on any failure
   4. CLAUDE.md exists and documents the architectural rules Claude must follow when generating code
   5. The architecture validator script detects and reports globals, cross-plugin imports, and client-side game logic
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 - [x] 01-01-PLAN.md — Project scaffolding + selene linting + stylua formatting
 - [x] 01-02-PLAN.md — Pre-commit hooks + busted test framework
 - [ ] 01-03-PLAN.md — CLAUDE.md architectural rules + architecture validator
@@ -52,5 +52,5 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. DevOps Foundation | 3/4 | In Progress|  |
+| 1. DevOps Foundation | 4/4 | Complete   | 2026-03-01 |
 | 2. Core Infrastructure | 0/TBD | Not started | - |
