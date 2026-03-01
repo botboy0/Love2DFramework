@@ -1,0 +1,53 @@
+---
+# Combined selene std for test files.
+# Extends lua51 base with Love2D framework globals and busted test globals.
+# Used in tests/selene.toml so test files can use describe/it/assert.* without selene errors.
+base: "lua51"
+name: "love2d_busted"
+globals:
+  # Love2D framework
+  love:
+    any: true
+  # ECS context globals (whitelisted in love2d.yml)
+  world:
+    any: true
+  eventBus:
+    any: true
+  registry:
+    any: true
+  # busted test structure
+  describe:
+    any: true
+  it:
+    any: true
+  pending:
+    any: true
+  before_each:
+    any: true
+  after_each:
+    any: true
+  before_all:
+    any: true
+  after_all:
+    any: true
+  setup:
+    any: true
+  teardown:
+    any: true
+  context:
+    any: true
+  insulate:
+    any: true
+  expose:
+    any: true
+  # busted assert (extends Lua standard assert with .equals, .is_true, etc.)
+  # Defined as 'any' to allow arbitrary field access that busted adds at runtime
+  assert:
+    any: true
+  # busted spy/stub/mock
+  spy:
+    any: true
+  stub:
+    any: true
+  mock:
+    any: true

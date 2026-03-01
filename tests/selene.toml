@@ -1,4 +1,4 @@
-std = "love2d_test"
+std = "love2d_busted"
 
 [rules]
 unscoped_variables = "deny"
