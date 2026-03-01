@@ -1,9 +1,20 @@
---- Plugin registry with topological dependency sort and fail-fast boot.
+--- Plugin registry with topological dependency sort, fail-fast boot,
+--- error_mode support, and optional side enforcement for dual-world setups.
 ---
 --- Plugins are registered with explicit dependency lists. boot() performs
 --- a topological sort (Kahn's BFS algorithm) and calls plugin:init(ctx) in
 --- dependency order. Missing or cyclic dependencies cause a boot-time error
 --- before any plugin:init runs.
+---
+--- Error modes:
+---   "strict" (default) — plugin init errors propagate from boot(); boot aborts.
+---   "tolerant" — plugin init errors are logged; boot continues with remaining plugins.
+---     Failed plugins are excluded from the shutdown order.
+---
+--- Side enforcement (dual-world only):
+---   When a plugin has side = "server" or side = "client" and the worlds handle
+---   has both .server and .client fields, cross-side dependencies are rejected.
+---   In single-world mode, side declarations are stored but not enforced.
 ---
 --- Usage:
 ---   local Registry = require("src.core.registry")
@@ -17,43 +28,93 @@
 local Registry = {}
 Registry.__index = Registry
 
+--- Resolve error_mode from a config table.
+--- Checks module-specific override first, then global, then fallback.
+--- @param config table|nil
+--- @param module_name string
+--- @param fallback string
+--- @return string
+local function resolve_error_mode(config, module_name, fallback)
+	local modes = config and config.error_modes
+	if modes and modes[module_name] ~= nil then
+		return modes[module_name]
+	end
+	if config and config.error_mode ~= nil then
+		return config.error_mode
+	end
+	return fallback
+end
+
 --- Create a new Registry instance.
+--- @param opts table|nil  optional: { config = { error_mode = "strict"|"tolerant", error_modes = {...} }, log = fn }
 --- @return table registry
-function Registry.new()
+function Registry.new(opts)
+	opts = opts or {}
+	local config = opts.config or {}
 	return setmetatable({
-		_plugins = {}, -- array of { name, module, deps }
-		_boot_order = {}, -- populated after boot(); used for shutdown
+		_plugins = {}, -- array of { name, module, deps, side }
+		_boot_order = {}, -- populated after boot(); used for shutdown (only successful plugins)
 		_booted = false,
+		_error_mode = resolve_error_mode(config, "registry", "strict"),
+		_log = opts.log or print,
 	}, Registry)
 end
 
 --- Register a plugin with the registry.
 --- @param name string  unique plugin name
 --- @param plugin_module table  plugin object with :init(ctx) method
---- @param opts table|nil  optional opts; opts.deps = { "dep_name", ... }
+--- @param opts table|nil  optional opts; opts.deps = { "dep_name", ... }; opts.side = "server"|"client"|nil
 function Registry:register(name, plugin_module, opts)
 	opts = opts or {}
 	table.insert(self._plugins, {
 		name = name,
 		module = plugin_module,
 		deps = opts.deps or {},
+		side = opts.side, -- nil, "server", or "client"
 	})
 end
 
+--- Check whether worlds represents a dual-world setup.
+--- A dual-world has both .server and .client sub-handles.
+--- @param worlds table|nil
+--- @return boolean
+local function is_dual_world(worlds)
+	return worlds ~= nil and worlds.server ~= nil and worlds.client ~= nil
+end
+
 --- Validate all declared dependencies exist.
---- Errors before any init runs if a dependency is missing.
---- @param entries table  array of { name, module, deps }
-local function validate_deps(entries)
-	-- Build a set of registered names for O(1) lookup
+--- Optionally enforces side constraints when dual_mode is true.
+--- Errors before any init runs if a dependency is missing or side-incompatible.
+--- @param entries table  array of { name, module, deps, side }
+--- @param dual_mode boolean  whether to enforce side constraints
+local function validate_deps(entries, dual_mode)
+	-- Build a set of registered names and their sides for O(1) lookup
 	local registered = {}
+	local sides = {}
 	for _, entry in ipairs(entries) do
 		registered[entry.name] = true
+		sides[entry.name] = entry.side
 	end
 
 	for _, entry in ipairs(entries) do
 		for _, dep in ipairs(entry.deps) do
 			if not registered[dep] then
 				error(string.format("Plugin '%s' depends on '%s' which is not registered", entry.name, dep))
+			end
+
+			-- Side enforcement: only in dual-world mode, only when both sides are set
+			if dual_mode and entry.side ~= nil and sides[dep] ~= nil then
+				if entry.side ~= sides[dep] then
+					error(
+						string.format(
+							"Side violation: '%s' (%s) depends on '%s' (%s) — cross-side dependencies are not allowed in dual-world mode",
+							entry.name,
+							entry.side,
+							dep,
+							sides[dep]
+						)
+					)
+				end
 			end
 		end
 	end
@@ -137,18 +198,40 @@ end
 --- Boot all registered plugins in topological dependency order.
 --- Errors with a descriptive message if any dependency is missing or cyclic.
 --- No plugin:init is called if validation fails.
+--- In strict mode (default): errors from plugin:init propagate and abort boot.
+--- In tolerant mode: errors from plugin:init are logged; boot continues.
 --- @param ctx table  context object passed to each plugin:init
 function Registry:boot(ctx)
-	-- Step 1: Fail-fast on missing deps (before any init runs)
-	validate_deps(self._plugins)
+	-- Determine if worlds is dual-mode for side enforcement
+	local dual_mode = is_dual_world(ctx and ctx.worlds)
+
+	-- Step 1: Fail-fast on missing deps and side violations (before any init runs)
+	validate_deps(self._plugins, dual_mode)
 
 	-- Step 2: Topological sort (errors on cycle before any init runs)
 	local sorted = topological_sort(self._plugins)
 
 	-- Step 3: Call init in sorted order
-	self._boot_order = sorted
-	for _, entry in ipairs(sorted) do
-		entry.module:init(ctx)
+	-- Only successfully initialized plugins enter _boot_order (for shutdown)
+	self._boot_order = {}
+
+	if self._error_mode == "tolerant" then
+		for _, entry in ipairs(sorted) do
+			local ok, err = pcall(entry.module.init, entry.module, ctx)
+			if ok then
+				table.insert(self._boot_order, entry)
+			else
+				self._log(
+					string.format("[Registry] Plugin '%s' init failed (tolerant mode): %s", entry.name, tostring(err))
+				)
+			end
+		end
+	else
+		-- Strict mode: let errors propagate
+		for _, entry in ipairs(sorted) do
+			entry.module:init(ctx)
+			table.insert(self._boot_order, entry)
+		end
 	end
 
 	self._booted = true
