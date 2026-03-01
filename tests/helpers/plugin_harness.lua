@@ -1,90 +1,75 @@
 --- Plugin test harness
---- Creates an isolated context (world, bus, registry) for testing plugins.
+--- Creates an isolated context (worlds, bus, services) for testing plugins.
+--- Uses real infrastructure (Bus, Worlds, Context) — not stubs.
+---
 --- Plugins declare dependencies explicitly; undeclared dependencies are violations.
+--- Dependencies are passed as a name->service table in opts.deps.
+---
+--- Usage:
+---   local harness = require("tests.helpers.plugin_harness")
+---   local ctx = harness.create_context({ deps = { inventory = InventoryServiceStub } })
+---   MyPlugin:init(ctx)
+---   harness.teardown(ctx)
+
+local Bus = require("src.core.bus")
+local Context = require("src.core.context")
+local Worlds = require("src.core.worlds")
+local evolved = require("lib.evolved")
+
 local plugin_harness = {}
 
---- Create an isolated test context for a plugin.
---- @param opts table Optional overrides: { deps = {}, config = {} }
---- @return table ctx The plugin context: { world, bus, config, services }
+--- Create an isolated test context for a plugin using real infrastructure.
+--- @param opts table Optional overrides: { deps = { name = service }, config = {} }
+--- @return table ctx The plugin context: { worlds, bus, config, services }
 function plugin_harness.create_context(opts)
 	opts = opts or {}
 
-	-- Stub world (replaced by evolved.lua ECS world in Phase 2)
-	local world = {
-		_entities = {},
-		_components = {},
-		addEntity = function(self, entity)
-			table.insert(self._entities, entity)
-			return entity
-		end,
-		removeEntity = function(self, entity)
-			for i, e in ipairs(self._entities) do
-				if e == entity then
-					table.remove(self._entities, i)
-					return
-				end
-			end
-		end,
-	}
-
-	-- Stub event bus (replaced by real deferred-dispatch bus in Phase 2)
-	local bus = {
-		_handlers = {},
-		on = function(self, event, handler)
-			self._handlers[event] = self._handlers[event] or {}
-			table.insert(self._handlers[event], handler)
-		end,
-		emit = function(self, event, ...)
-			local handlers = self._handlers[event] or {}
-			for _, handler in ipairs(handlers) do
-				handler(...)
-			end
-		end,
-	}
-
-	-- Stub registry
-	local registry = {
-		_plugins = {},
-		register = function(self, name, plugin)
-			self._plugins[name] = plugin
-		end,
-		get = function(self, name)
-			return self._plugins[name]
-		end,
-	}
-
-	local ctx = {
-		world = world,
+	local bus = Bus.new()
+	local worlds = Worlds.create()
+	local ctx = Context.new({
+		worlds = worlds,
 		bus = bus,
 		config = opts.config or {},
-		services = {},
-		registry = registry,
-	}
+	})
 
-	-- Load declared dependencies only
+	-- Pre-register declared dependency services (name -> service provider table).
+	-- Accepts both:
+	--   { "dep_name" } (legacy array — registers stub)
+	--   { dep_name = service }  (current — registers real service)
 	if opts.deps then
-		for _, dep_name in ipairs(opts.deps) do
-			-- In Phase 2 this will actually load the dependency plugin
-			ctx.services[dep_name] = { _stub = true }
+		-- Detect format: if first value is a string, treat as legacy array of names
+		local is_array = type(opts.deps[1]) == "string"
+		if is_array then
+			for _, dep_name in ipairs(opts.deps) do
+				ctx.services:register(dep_name, { _stub = true })
+			end
+		else
+			-- name -> service table
+			for name, service in pairs(opts.deps) do
+				ctx.services:register(name, service)
+			end
 		end
 	end
 
 	return ctx
 end
 
---- Tear down a test context (cleanup).
---- @param ctx table The context to tear down
-function plugin_harness.teardown(ctx)
-	if ctx.world then
-		ctx.world._entities = {}
-		ctx.world._components = {}
+--- Tear down a test context — destroys any spawned ECS entities and clears bus handlers.
+--- @param _ctx table The context to tear down (unused; present for API symmetry)
+--- @param spawned table|nil Optional list of evolved.entity to destroy (from worlds:spawn_*)
+function plugin_harness.teardown(_ctx, spawned)
+	-- Destroy any tracked ECS entities (evolved.lua singleton cleanup)
+	if spawned and #spawned > 0 then
+		evolved.defer()
+		for _, e in ipairs(spawned) do
+			if evolved.alive(e) then
+				evolved.destroy(e)
+			end
+		end
+		evolved.commit()
 	end
-	if ctx.bus then
-		ctx.bus._handlers = {}
-	end
-	if ctx.registry then
-		ctx.registry._plugins = {}
-	end
+	-- Bus is a plain table; no global cleanup needed.
+	-- Context and worlds are local — they will be GC'd.
 end
 
 return plugin_harness
