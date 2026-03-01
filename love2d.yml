@@ -1,0 +1,12 @@
+---
+base: "lua51"
+name: "love2d"
+globals:
+  love:
+    any: true
+  world:
+    any: true
+  eventBus:
+    any: true
+  registry:
+    any: true

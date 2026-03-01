@@ -1,7 +1,7 @@
 function love.load()
 end
 
-function love.update(dt)
+function love.update(_dt)
 end
 
 function love.draw()
