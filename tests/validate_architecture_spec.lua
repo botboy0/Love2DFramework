@@ -276,9 +276,9 @@ end)
 describe("Validator.run", function()
 	it("exits cleanly on a project with no violations", function()
 		-- Run against the actual project. Should find no violations since:
-		-- - src/ only has .gitkeep files (not .lua)
-		-- - No plugins exist yet
-		-- - No missing tests (no src/ .lua files to mirror)
+		-- - All src/ .lua files have corresponding tests/ _spec.lua mirrors
+		-- - No plugins exist yet (no cross-plugin import violations)
+		-- - No undeclared globals in src/ files
 		local total = Validator.run({ silent = true })
 		assert.equals(0, total, "Clean project should have zero violations")
 	end)
