@@ -25,7 +25,7 @@ function plugin_harness.create_context(opts)
 	opts = opts or {}
 
 	local bus = Bus.new()
-	local worlds = Worlds.create()
+	local worlds = Worlds.create({ dual = true })
 	local ctx = Context.new({
 		worlds = worlds,
 		bus = bus,

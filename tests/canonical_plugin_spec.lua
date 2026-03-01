@@ -4,7 +4,6 @@
 --- Run with: busted tests/canonical_plugin_spec.lua
 
 local CanonicalPlugin = require("examples.canonical_plugin")
-local Components = require("src.core.components")
 local evolved = require("lib.evolved")
 local harness = require("tests.helpers.plugin_harness")
 
@@ -79,10 +78,10 @@ describe("CanonicalPlugin", function()
 		it("moves entities with Position and Velocity components", function()
 			CanonicalPlugin:init(ctx)
 
-			-- Spawn a server entity with Position and Velocity
+			-- Spawn a server entity using the plugin's own fragment IDs
 			local e = ctx.worlds:spawn_server({
-				[Components.Position] = { x = 10.0, y = 20.0 },
-				[Components.Velocity] = { dx = 5.0, dy = -3.0 },
+				[CanonicalPlugin.Position] = { x = 10.0, y = 20.0 },
+				[CanonicalPlugin.Velocity] = { dx = 5.0, dy = -3.0 },
 			})
 			table.insert(spawned, e)
 
@@ -90,7 +89,7 @@ describe("CanonicalPlugin", function()
 			CanonicalPlugin:update(1.0)
 
 			-- Verify position was updated
-			local pos = evolved.get(e, Components.Position)
+			local pos = evolved.get(e, CanonicalPlugin.Position)
 			assert.is_not_nil(pos)
 			assert.are.equal(15.0, pos.x)
 			assert.are.equal(17.0, pos.y)
@@ -101,14 +100,14 @@ describe("CanonicalPlugin", function()
 
 			-- Spawn a server entity with only Position (no Velocity)
 			local e = ctx.worlds:spawn_server({
-				[Components.Position] = { x = 5.0, y = 5.0 },
+				[CanonicalPlugin.Position] = { x = 5.0, y = 5.0 },
 			})
 			table.insert(spawned, e)
 
 			-- Update should not touch this entity
 			CanonicalPlugin:update(1.0)
 
-			local pos = evolved.get(e, Components.Position)
+			local pos = evolved.get(e, CanonicalPlugin.Position)
 			assert.are.equal(5.0, pos.x)
 			assert.are.equal(5.0, pos.y)
 		end)
@@ -117,14 +116,14 @@ describe("CanonicalPlugin", function()
 			CanonicalPlugin:init(ctx)
 
 			local e = ctx.worlds:spawn_server({
-				[Components.Position] = { x = 0.0, y = 0.0 },
-				[Components.Velocity] = { dx = 10.0, dy = 4.0 },
+				[CanonicalPlugin.Position] = { x = 0.0, y = 0.0 },
+				[CanonicalPlugin.Velocity] = { dx = 10.0, dy = 4.0 },
 			})
 			table.insert(spawned, e)
 
 			CanonicalPlugin:update(0.5)
 
-			local pos = evolved.get(e, Components.Position)
+			local pos = evolved.get(e, CanonicalPlugin.Position)
 			assert.are.equal(5.0, pos.x)
 			assert.are.equal(2.0, pos.y)
 		end)

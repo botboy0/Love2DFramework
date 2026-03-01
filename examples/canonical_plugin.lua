@@ -7,7 +7,6 @@
 ---
 --- NOTE: examples/ is NOT loaded at runtime — this is a reference only.
 
-local Components = require("src.core.components")
 local evolved = require("lib.evolved")
 
 local CanonicalPlugin = {}
@@ -16,6 +15,14 @@ local CanonicalPlugin = {}
 CanonicalPlugin.name = "canonical"
 CanonicalPlugin.deps = {} -- no external dependencies for the example
 
+--- Fragment IDs for this plugin's components.
+--- Defined at module level — each game defines its own fragments in components.lua.
+--- This example plugin defines its own since it is a self-contained reference.
+--- Exposed on the module table so tests can spawn entities with the correct fragments.
+CanonicalPlugin.Position, CanonicalPlugin.Velocity = evolved.id(2)
+local Position = CanonicalPlugin.Position
+local Velocity = CanonicalPlugin.Velocity
+
 --- Initialize the plugin.
 --- Called by the plugin registry during boot in dependency order.
 --- @param ctx table { worlds, bus, config, services }
@@ -23,14 +30,15 @@ function CanonicalPlugin:init(ctx)
 	self.bus = ctx.bus
 	self.worlds = ctx.worlds
 
-	-- 1. Component usage — shared fragments from src/core/components.lua.
-	-- Components are defined centrally, not per-plugin. Plugins consume them.
-	-- Example: Components.Position, Components.Velocity, Components.Health
+	-- 1. Component usage — each game defines fragment IDs in components.lua.
+	-- Plugins import and use those shared fragments. This example defines its own
+	-- to remain self-contained. In a real game: local C = require("src.core.components")
+	-- then use C.Position, C.Velocity, etc.
 
 	-- 2. System query — build a query for server entities with Position + Velocity.
 	-- ServerTag scopes this query to the server world only.
-	self._movement_query =
-		evolved.builder():include(Components.Position, Components.Velocity):include(ctx.worlds.server.tag):build()
+	-- ctx.worlds must be a dual-world handle (Worlds.create({ dual = true })).
+	self._movement_query = evolved.builder():include(Position, Velocity):include(ctx.worlds.server.tag):build()
 
 	-- 3. Event handling — subscribe to bus events.
 	-- Handlers are closures; self is captured for state access.
@@ -52,7 +60,7 @@ end
 --- @param dt number Delta time in seconds
 function CanonicalPlugin:update(dt)
 	for chunk, _entities, count in evolved.execute(self._movement_query) do
-		local positions, velocities = chunk:components(Components.Position, Components.Velocity)
+		local positions, velocities = chunk:components(Position, Velocity)
 		for i = 1, count do
 			positions[i].x = positions[i].x + velocities[i].dx * dt
 			positions[i].y = positions[i].y + velocities[i].dy * dt
