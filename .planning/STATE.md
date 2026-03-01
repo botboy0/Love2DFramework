@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 1 of 7 (Core Infrastructure)
-Plan: 3 of ? in current phase
-Status: In progress
-Last activity: 2026-03-02 — Completed 01-03 (Context transport wiring + Registry error_mode + side enforcement)
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-03-02 — Completed 01-04 (main.lua integration: love.quit, transport flush ordering, canonical plugin single-world mode)
 
-Progress: [███░░░░░░░] ~21%
+Progress: [████░░░░░░] ~28%
 
 ## Performance Metrics
 
@@ -27,11 +27,11 @@ Progress: [███░░░░░░░] ~21%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-core-infrastructure | 3 | ~8 min | ~2.7 min |
+| 01-core-infrastructure | 4 | ~11 min | ~2.75 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-02, 01-03
-- Trend: On track
+- Last 5 plans: 01-01, 01-02, 01-03, 01-04
+- Trend: On track — Phase 1 complete
 
 *Updated after each plan completion*
 
@@ -56,6 +56,10 @@ Recent decisions affecting current work:
 - [01-03]: resolve_error_mode() duplicated in context.lua and registry.lua (acceptable until a third caller appears)
 - [01-03]: Registry tolerant boot uses pcall(entry.module.init, entry.module, ctx) — method syntax cannot be pcall'd cleanly
 - [01-03]: Side enforcement uses is_dual_world() duck-type check (worlds.server + worlds.client) — no worlds mode flag needed
+- [01-04]: love.quit guard: if _registry and _ctx — safe for quit-before-load
+- [01-04]: Transport flush ordering: receive_all (inbound->bus queue) before bus:flush before transport:flush (outbound)
+- [01-04]: _config local in main.lua — games override here or in conf.lua; not loaded from file
+- [01-04]: canonical_plugin.lua uses local fragments; single-world compatibility via if ctx.worlds.server duck-type check
 
 ### Pending Todos
 
@@ -69,5 +73,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 01-03-PLAN.md — Context transport wiring, auto-bridge, Registry error_mode and side enforcement; ready for 01-04
+Stopped at: Completed 01-04-PLAN.md — main.lua integration (love.quit, transport flush, config threading, canonical plugin single-world); Phase 1 complete
 Resume file: None
