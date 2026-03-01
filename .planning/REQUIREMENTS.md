@@ -19,7 +19,7 @@ Requirements for initial release. DevOps + infrastructure foundation — no game
 
 ### Core Infrastructure
 
-- [ ] **INFRA-01**: Deferred-dispatch event bus with queue + flush-per-tick and re-entrancy guard
+- [x] **INFRA-01**: Deferred-dispatch event bus with queue + flush-per-tick and re-entrancy guard
 - [ ] **INFRA-02**: Plugin registry with standard `plugin:init(ctx)` API; `ctx = { world, bus, config, services }`
 - [ ] **INFRA-03**: Dual evolved.lua ECS worlds (server simulation + client rendering)
 - [ ] **INFRA-04**: love.thread channel transport for client-server communication (solo mode)
@@ -104,7 +104,7 @@ Deferred to next milestone. Game features (Age 0: beach to copper tool).
 | DEV-05 | Phase 1 | Complete |
 | DEV-06 | Phase 1 | Complete |
 | DEV-07 | Phase 1 | Complete |
-| INFRA-01 | Phase 2 | Pending |
+| INFRA-01 | Phase 2 | Complete |
 | INFRA-02 | Phase 2 | Pending |
 | INFRA-03 | Phase 2 | Pending |
 | INFRA-04 | Phase 2 | Pending |
