@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T18:18:34.846Z"
+last_updated: "2026-03-01T18:31:21.271Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,28 +23,28 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 2 of 2 (Core Infrastructure)
-Plan: 3 of 5 in current phase (02-03 complete)
+Plan: 4 of 5 in current phase (02-04 complete)
 Status: Phase 2 in progress
-Last activity: 2026-03-01 — Completed 02-03 (plugin registry + transport layer)
+Last activity: 2026-03-01 — Completed 02-04 (plugin harness, canonical plugin, main.lua wiring)
 
-Progress: [███████░░░] 72%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 4.1 min
-- Total execution time: 31 min
+- Total plans completed: 8
+- Average duration: 5.1 min
+- Total execution time: 41 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-devops-foundation | 4 | 22 min | 5.5 min |
-| 02-core-infrastructure | 3 | 11 min | 3.7 min |
+| 02-core-infrastructure | 4 | 21 min | 5.25 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (4 min), 02-01 (2 min), 02-02 (4 min), 02-03 (5 min)
+- Last 5 plans: 02-01 (2 min), 02-02 (4 min), 02-03 (5 min), 02-04 (10 min)
 - Trend: stable, fast
 
 *Updated after each plan completion*
@@ -76,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 02-core-infrastructure]: Kahn's BFS for topological sort in registry: naturally detects cycles, stable within same depth
 - [Phase 02-core-infrastructure]: binser.deserialize returns (vals_array, n): receive() must index vals[1] to extract message
 - [Phase 02-core-infrastructure]: Injectable log function in Transport.new({ log = fn }) — allows test warning capture without print override
+- [Phase 02-core-infrastructure]: Real harness deps format: opts.deps accepts name->service table (new) or array-of-strings (legacy stub) for backward compatibility
+- [Phase 02-core-infrastructure]: Architecture validator global detection: brace depth + function depth + self-assignment filter eliminates false positives from setmetatable patterns
 
 ### Pending Todos
 
@@ -88,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 02-03-PLAN.md — plugin registry with topological sort (Kahn's BFS), transport layer with binser channels and networkable whitelist (37 tests)
+Stopped at: Completed 02-04-PLAN.md — plugin harness (real infrastructure), canonical plugin example, main.lua registry boot wiring, architecture validator false-positive fix (135 tests, 0 failures)
 Resume file: None

@@ -24,8 +24,8 @@ Requirements for initial release. DevOps + infrastructure foundation — no game
 - [x] **INFRA-03**: Dual evolved.lua ECS worlds (server simulation + client rendering)
 - [x] **INFRA-04**: love.thread channel transport for client-server communication (solo mode)
 - [x] **INFRA-05**: Context object pattern — single `ctx` passed to all plugins
-- [ ] **INFRA-06**: Plugin isolation test template — each plugin loadable and testable without sibling plugins
-- [ ] **INFRA-07**: Canonical plugin example (`examples/canonical_plugin.lua`) maintained as reference implementation
+- [x] **INFRA-06**: Plugin isolation test template — each plugin loadable and testable without sibling plugins
+- [x] **INFRA-07**: Canonical plugin example (`examples/canonical_plugin.lua`) maintained as reference implementation
 
 ## v2 Requirements
 
@@ -109,8 +109,8 @@ Deferred to next milestone. Game features (Age 0: beach to copper tool).
 | INFRA-03 | Phase 2 | Complete |
 | INFRA-04 | Phase 2 | Complete |
 | INFRA-05 | Phase 2 | Complete |
-| INFRA-06 | Phase 2 | Pending |
-| INFRA-07 | Phase 2 | Pending |
+| INFRA-06 | Phase 2 | Complete |
+| INFRA-07 | Phase 2 | Complete |
 
 **Coverage:**
 - v1 requirements: 14 total

@@ -13,7 +13,7 @@ v1 delivers the enforcement foundation that prevents the code quality degradatio
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: DevOps Foundation** - Linting, formatting, testing, CI, and architectural enforcement rules in place before any game code (completed 2026-03-01)
-- [ ] **Phase 2: Core Infrastructure** - Event bus, plugin registry, ECS worlds, transport layer, and canonical plugin example
+- [x] **Phase 2: Core Infrastructure** - Event bus, plugin registry, ECS worlds, transport layer, and canonical plugin example (completed 2026-03-01)
 
 ## Phase Details
 
@@ -43,7 +43,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A plugin loaded in isolation (without sibling plugins) passes all its tests using the isolation test template
   4. The canonical plugin example demonstrates component registration, system registration, and event handling in one file that passes lint and tests
   5. A message sent through love.thread channel transport arrives on the other side in the same tick it was flushed
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 - [ ] 02-01-PLAN.md — Vendor libraries (evolved.lua, binser) + deferred-dispatch event bus (TDD)
 - [ ] 02-02-PLAN.md — Shared components, dual ECS worlds, context object pattern (TDD)
 - [ ] 02-03-PLAN.md — Plugin registry with dependency sort + transport layer (TDD)
@@ -57,4 +57,4 @@ Phases execute in numeric order: 1 → 2
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. DevOps Foundation | 4/4 | Complete   | 2026-03-01 |
-| 2. Core Infrastructure | 3/4 | In Progress|  |
+| 2. Core Infrastructure | 4/4 | Complete   | 2026-03-01 |
