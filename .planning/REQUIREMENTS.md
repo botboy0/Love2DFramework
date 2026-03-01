@@ -13,10 +13,10 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **CORE-02**: Plugin registry shuts down plugins in reverse order via `love.quit`
 - [x] **CORE-03**: Deferred-dispatch event bus queues events during update and delivers on `bus:flush()`
 - [x] **CORE-04**: Event bus re-entrancy guard blocks emissions during flush with a logged warning
-- [ ] **CORE-05**: ECS world management integrates evolved.lua with tag-based isolation (ServerTag/ClientTag)
-- [ ] **CORE-06**: Single-world mode works without tags for simple games
+- [x] **CORE-05**: ECS world management integrates evolved.lua with tag-based isolation (ServerTag/ClientTag)
+- [x] **CORE-06**: Single-world mode works without tags for simple games
 - [ ] **CORE-07**: Context object `ctx = { worlds, bus, config, services }` passed to all plugins
-- [ ] **CORE-08**: Shared components defined centrally in `src/core/components.lua` — no `evolved.id()` in plugin files
+- [x] **CORE-08**: Shared components defined centrally in `src/core/components.lua` — no `evolved.id()` in plugin files
 - [x] **CORE-09**: Optional love.thread channel transport for client-server communication
 - [ ] **CORE-10**: Explicit plugin manifest (`plugin_list.lua`) — no auto-discovery
 
@@ -102,10 +102,10 @@ Deferred to future release.
 | CORE-02 | Phase 1 | Pending |
 | CORE-03 | Phase 1 | Complete |
 | CORE-04 | Phase 1 | Complete |
-| CORE-05 | Phase 1 | Pending |
-| CORE-06 | Phase 1 | Pending |
+| CORE-05 | Phase 1 | Complete |
+| CORE-06 | Phase 1 | Complete |
 | CORE-07 | Phase 1 | Pending |
-| CORE-08 | Phase 1 | Pending |
+| CORE-08 | Phase 1 | Complete |
 | CORE-09 | Phase 1 | Complete |
 | CORE-10 | Phase 1 | Pending |
 | PLUG-01 | Phase 2 | Pending |

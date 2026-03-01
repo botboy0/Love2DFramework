@@ -126,7 +126,7 @@ Note: Phase 6 (Developer Tools) depends only on Phase 1 and Phase 7 (Documentati
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Infrastructure | 2/4 | In progress | - |
+| 1. Core Infrastructure | 2/4 | In Progress|  |
 | 2. Plugin Infrastructure | 0/? | Not started | - |
 | 3. Input Plugin | 0/? | Not started | - |
 | 4. Asset Pipeline | 0/? | Not started | - |
