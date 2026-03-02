@@ -4,5 +4,6 @@ return {
 		pattern = "_spec",
 		output = "utfTerminal",
 		verbose = true,
+		lpath = "./?/init.lua",
 	},
 }
