@@ -102,6 +102,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Fix ROADMAP plugin:quit() → plugin:shutdown() naming | 2026-03-02 | f004fce | [1-fix-roadmap-plugin-quit-to-plugin-shutdo](./quick/1-fix-roadmap-plugin-quit-to-plugin-shutdo/) |
+| 2 | Implement validate_architecture --fix flag for missing test files | 2026-03-02 | 22d9f12 | [2-implement-validate-architecture-fix-flag](./quick/2-implement-validate-architecture-fix-flag/) |
 
 ### Blockers/Concerns
 
@@ -111,5 +112,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 03-02-PLAN.md — Input plugin with baton, touch regions, service API, bus events, main.lua wiring
+Stopped at: Completed quick task 2 — validate_architecture --fix flag for missing test files
 Resume file: None
