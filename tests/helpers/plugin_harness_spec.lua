@@ -58,14 +58,12 @@ describe("plugin_harness.create_context", function()
 				deps = { crafting = crafting_svc },
 				allowed_deps = {},
 				error_mode = "tolerant",
+				log = function() end,
 			})
-			local original_print = _G.print
-			_G.print = function() end
 			-- In tolerant mode, accessing an undeclared service warns but does not error
 			assert.has_no_error(function()
 				ctx.services:get("crafting")
 			end)
-			_G.print = original_print
 		end)
 
 		it("delegates register() through the proxy", function()

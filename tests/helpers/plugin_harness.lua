@@ -28,7 +28,8 @@ local plugin_harness = {}
 --- @param allowed_deps table   Array of allowed service names (e.g. {"inventory"}).
 --- @param error_mode string    "strict" | "tolerant"
 --- @return table proxy
-local function make_dep_enforced_services(real_services, allowed_deps, error_mode)
+local function make_dep_enforced_services(real_services, allowed_deps, error_mode, log_fn)
+	log_fn = log_fn or print
 	-- Build a set for O(1) lookup
 	local allowed = {}
 	for _, name in ipairs(allowed_deps) do
@@ -47,7 +48,7 @@ local function make_dep_enforced_services(real_services, allowed_deps, error_mod
 							name
 						)
 						if error_mode == "tolerant" then
-							print(string.format("[Harness] %s", msg))
+							log_fn(string.format("[Harness] %s", msg))
 							return real_services:get(name)
 						else
 							error(msg, 2)
@@ -72,7 +73,7 @@ end
 
 --- Create an isolated test context for a plugin using real infrastructure.
 --- @param opts table Optional overrides:
----   { deps = { name = service }, config = {}, allowed_deps = {"name"}, error_mode = "strict"|"tolerant" }
+---   { deps = { name = service }, config = {}, allowed_deps = {"name"}, error_mode = "strict"|"tolerant", log = function }
 --- @return table ctx The plugin context: { worlds, bus, config, services }
 function plugin_harness.create_context(opts)
 	opts = opts or {}
@@ -108,7 +109,7 @@ function plugin_harness.create_context(opts)
 	-- error_mode defaults to "strict" — use "tolerant" to warn instead of error.
 	if opts.allowed_deps then
 		local error_mode = opts.error_mode or "strict"
-		ctx.services = make_dep_enforced_services(ctx.services, opts.allowed_deps, error_mode)
+		ctx.services = make_dep_enforced_services(ctx.services, opts.allowed_deps, error_mode, opts.log)
 	end
 
 	return ctx
