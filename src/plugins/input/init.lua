@@ -25,8 +25,8 @@
 --- Follow canonical_plugin.lua pattern exactly.
 --- See CLAUDE.md for architectural rules.
 
-local baton = require("lib.baton")
 local TouchRegions = require("src.plugins.input.touch_regions")
+local baton = require("lib.baton")
 
 local InputPlugin = {}
 InputPlugin.__index = InputPlugin
