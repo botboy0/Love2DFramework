@@ -49,15 +49,18 @@ function love.update(_dt)
 	if not _ctx then
 		return
 	end
-	-- 1. Receive inbound transport messages and queue as bus events
+	-- 1. Update all plugins (e.g. input polling, per-frame logic)
+	--    Runs before bus:flush so events emitted by plugins are delivered this tick
+	_registry:update_all(_dt)
+	-- 2. Receive inbound transport messages and queue as bus events
 	--    (inbound messages are queued before flush so they are delivered this tick)
 	local messages = _ctx.transport:receive_all()
 	for _, msg in ipairs(messages) do
 		_ctx.bus:emit(msg.event, msg.data)
 	end
-	-- 2. Flush bus — delivers all queued events including inbound transport messages
+	-- 3. Flush bus — delivers all queued events including inbound transport messages
 	_ctx.bus:flush()
-	-- 3. Flush transport — sends outbound networkable events queued by the auto-bridge
+	-- 4. Flush transport — sends outbound networkable events queued by the auto-bridge
 	_ctx.transport:flush()
 end
 

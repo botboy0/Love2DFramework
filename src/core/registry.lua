@@ -237,6 +237,38 @@ function Registry:boot(ctx)
 	self._booted = true
 end
 
+--- Call update(dt) on all booted plugins in boot order.
+--- Plugins without an update method are silently skipped.
+--- In strict mode (default): errors from plugin:update propagate.
+--- In tolerant mode: errors from plugin:update are logged; remaining plugins still update.
+--- Safe to call before boot() — _boot_order is empty so it is a no-op.
+--- @param dt number  delta-time passed through to each plugin:update
+function Registry:update_all(dt)
+	if self._error_mode == "tolerant" then
+		for _, entry in ipairs(self._boot_order) do
+			if entry.module.update then
+				local ok, err = pcall(entry.module.update, entry.module, dt)
+				if not ok then
+					self._log(
+						string.format(
+							"[Registry] Plugin '%s' update failed (tolerant mode): %s",
+							entry.name,
+							tostring(err)
+						)
+					)
+				end
+			end
+		end
+	else
+		-- Strict mode: let errors propagate
+		for _, entry in ipairs(self._boot_order) do
+			if entry.module.update then
+				entry.module:update(dt)
+			end
+		end
+	end
+end
+
 --- Shut down all booted plugins in reverse boot order.
 --- Calls plugin:shutdown(ctx) for each plugin that defines it.
 --- Safe to call even if some plugins lack a shutdown method.
