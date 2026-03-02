@@ -95,6 +95,30 @@ describe("CanonicalPlugin", function()
 				CanonicalPlugin:init(single_ctx)
 			end)
 		end)
+
+		describe("config access", function()
+			it("does not error when ctx.config contains tick_rate", function()
+				local config_ctx = harness.create_context({ config = { tick_rate = 30 } })
+				CanonicalPlugin._last_spawned = nil
+				CanonicalPlugin._movement_query = nil
+				CanonicalPlugin.bus = nil
+				CanonicalPlugin.worlds = nil
+				assert.has_no_error(function()
+					CanonicalPlugin:init(config_ctx)
+				end)
+			end)
+
+			it("does not error when ctx.config is empty (uses default tick_rate fallback)", function()
+				local empty_ctx = harness.create_context({ config = {} })
+				CanonicalPlugin._last_spawned = nil
+				CanonicalPlugin._movement_query = nil
+				CanonicalPlugin.bus = nil
+				CanonicalPlugin.worlds = nil
+				assert.has_no_error(function()
+					CanonicalPlugin:init(empty_ctx)
+				end)
+			end)
+		end)
 	end)
 
 	describe("update", function()
