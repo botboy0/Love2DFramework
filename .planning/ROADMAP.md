@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Core Infrastructure** - Event bus, ECS worlds, plugin registry, context object, and optional transport — the complete framework contract
 - [x] **Phase 2: Plugin Infrastructure** - Canonical plugin example, test harness, and architecture validator checks that make the core contract enforceable (completed 2026-03-02)
 - [x] **Phase 3: Input Plugin** - Unified keyboard/gamepad/touch input via baton, registered as a standard framework plugin (completed 2026-03-02)
-- [ ] **Phase 4: Asset Pipeline** - Async asset loading and texture atlas packing via Lily and Runtime-TextureAtlas
+- [x] **Phase 4: Asset Pipeline** - Async asset loading and texture atlas packing via Lily and Runtime-TextureAtlas (completed 2026-03-02)
 - [ ] **Phase 5: Collision Plugin** - Polygon/circle/AABB collision and broad-phase spatial queries via slick and shash
 - [ ] **Phase 6: Developer Tools** - Profiling and debug UI for development builds only
 - [ ] **Phase 7: Documentation** - API docs and getting-started guide sufficient for a developer to build their first plugin
@@ -134,7 +134,7 @@ Note: Phase 6 (Developer Tools) depends only on Phase 1 and Phase 7 (Documentati
 | 1. Core Infrastructure | 4/4 | Complete | 2026-03-02 |
 | 2. Plugin Infrastructure | 3/3 | Complete   | 2026-03-02 |
 | 3. Input Plugin | 2/2 | Complete   | 2026-03-02 |
-| 4. Asset Pipeline | 2/3 | In Progress|  |
+| 4. Asset Pipeline | 3/3 | Complete   | 2026-03-02 |
 | 5. Collision Plugin | 0/? | Not started | - |
 | 6. Developer Tools | 0/? | Not started | - |
 | 7. Documentation | 0/? | Not started | - |

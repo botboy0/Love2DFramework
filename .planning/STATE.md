@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 4 of 7 (Asset Pipeline)
-Plan: 2 of 4 in current phase (04-02 complete)
+Plan: 3 of 4 in current phase (04-03 complete)
 Status: In progress
-Last activity: 2026-03-02 - Completed 04-02: AssetLoader (Lily wrapper) and AtlasBuilder (RTA wrapper)
+Last activity: 2026-03-02 - Completed 04-03: Asset plugin init.lua with load-then-pack pipeline and boot manifest registration
 
-Progress: [████████░░] ~65%
+Progress: [████████░░] ~70%
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [████████░░] ~65%
 | 01-core-infrastructure | 4 | ~11 min | ~2.75 min |
 | 02-plugin-infrastructure | 3 | ~13 min | ~4.3 min |
 | 03-input-plugin (partial) | 2 | ~10 min | ~5 min |
-| 04-asset-pipeline | 2 | ~7 min | ~3.5 min |
+| 04-asset-pipeline | 3 | ~13 min | ~4.3 min |
 
 **Recent Trend:**
 - Last 5 plans: 03-01, 03-02, 04-01, 04-02
@@ -102,6 +102,9 @@ Recent decisions affecting current work:
 - [04-01]: Image group derivation: atlas=false -> nil (standalone), explicit group= -> override, else derive from penultimate path segment
 - [04-01]: DrawableWrapper injectable via opts.draw_fn and opts.get_dimensions_fn — no love.graphics at module load time
 - [04-01]: Test spy helper uses setmetatable __call (not bare function) to allow field assignment in Lua 5.1
+- [04-03]: asset:ready deferred to update() — batch_complete handler fires during flush(), direct emit discarded by bus re-entrancy guard
+- [04-03]: DI via second opts arg to init() for test isolation — same pattern as touch_regions.lua _get_dimensions injection
+- [04-03]: block_depth replaces function_depth in validator detect_globals — counts ALL block-opening keywords (function, if, for, while, repeat, do) to avoid false positives from nested block ends
 
 ### Pending Todos
 
@@ -122,5 +125,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 04-02-PLAN.md — AssetLoader (Lily wrapper) and AtlasBuilder (RTA wrapper)
+Stopped at: Completed 04-03-PLAN.md — Asset plugin init.lua with load-then-pack pipeline
 Resume file: None
