@@ -119,6 +119,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 1 | Fix ROADMAP plugin:quit() → plugin:shutdown() naming | 2026-03-02 | f004fce | [1-fix-roadmap-plugin-quit-to-plugin-shutdo](./quick/1-fix-roadmap-plugin-quit-to-plugin-shutdo/) |
 | 2 | Implement validate_architecture --fix flag for missing test files | 2026-03-02 | 22d9f12 | [2-implement-validate-architecture-fix-flag](./quick/2-implement-validate-architecture-fix-flag/) |
+| 3 | Create a simple stacker game using the framework | 2026-03-02 | f3790d2 | [3-create-a-simple-stacker-game-using-the-f](./quick/3-create-a-simple-stacker-game-using-the-f/) |
 
 ### Blockers/Concerns
 
@@ -128,5 +129,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 04-04-PLAN.md — Stdout noise closure (print stub, Bus log suppressor, Validator silent mode)
+Stopped at: Completed quick task 3 — Stacker game plugin (Registry:draw_all, ECS fragments, full CI passing)
 Resume file: None
