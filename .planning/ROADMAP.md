@@ -79,10 +79,12 @@ Plans:
   2. Sprites packed into a texture atlas at startup are drawn from a single atlas texture, not individual files
   3. The atlas packing step rejects any atlas configuration that would exceed 4096x4096 pixels, with a clear error message
   4. A Lily completion callback emits a bus event — it does not directly spawn entities or mutate ECS state
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — Vendor Lily + RTA, manifest parser, drawable wrapper (Wave 1)
+- [ ] 04-02-PLAN.md — Asset loader (Lily wrapper) + atlas builder (RTA wrapper) (Wave 2)
+- [ ] 04-03-PLAN.md — Asset plugin init.lua + plugin_list wiring (Wave 3)
 
 ### Phase 5: Collision Plugin
 **Goal**: Game code can detect collisions and query nearby entities without implementing any spatial math
