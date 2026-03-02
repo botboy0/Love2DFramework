@@ -39,6 +39,11 @@ function CanonicalPlugin:init(ctx)
 	self.bus = ctx.bus
 	self.worlds = ctx.worlds
 
+	-- 0. Config access — read framework/game configuration values.
+	-- ctx.config is the plain table passed through Context.new().
+	-- Games set values in _config in main.lua or override via conf.lua.
+	local _tick_rate = ctx.config.tick_rate or 60 -- unused in example; demonstrates pattern
+
 	-- 1. Component usage — each game defines fragment IDs in components.lua.
 	-- Plugins import and use those shared fragments. This example defines its own
 	-- to remain self-contained. In a real game: local C = require("src.core.components")
