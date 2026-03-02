@@ -13,7 +13,7 @@ The framework ships in seven sequential phases, each delivering a complete, test
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Core Infrastructure** - Event bus, ECS worlds, plugin registry, context object, and optional transport — the complete framework contract
-- [ ] **Phase 2: Plugin Infrastructure** - Canonical plugin example, test harness, and architecture validator checks that make the core contract enforceable
+- [x] **Phase 2: Plugin Infrastructure** - Canonical plugin example, test harness, and architecture validator checks that make the core contract enforceable (completed 2026-03-02)
 - [ ] **Phase 3: Input Plugin** - Unified keyboard/gamepad/touch input via baton, registered as a standard framework plugin
 - [ ] **Phase 4: Asset Pipeline** - Async asset loading and texture atlas packing via Lily and Runtime-TextureAtlas
 - [ ] **Phase 5: Collision Plugin** - Polygon/circle/AABB collision and broad-phase spatial queries via slick and shash
@@ -129,7 +129,7 @@ Note: Phase 6 (Developer Tools) depends only on Phase 1 and Phase 7 (Documentati
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Infrastructure | 4/4 | Complete | 2026-03-02 |
-| 2. Plugin Infrastructure | 2/3 | In progress | - |
+| 2. Plugin Infrastructure | 3/3 | Complete   | 2026-03-02 |
 | 3. Input Plugin | 0/? | Not started | - |
 | 4. Asset Pipeline | 0/? | Not started | - |
 | 5. Collision Plugin | 0/? | Not started | - |

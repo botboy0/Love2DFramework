@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-02T00:16:10Z"
+last_updated: "2026-03-02T00:22:03.074Z"
 progress:
-  total_phases: 7
-  completed_phases: 1
-  total_plans: 8
-  completed_plans: 6
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 2 of 7 (Plugin Infrastructure)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-03-02 — Completed 02-02 (detect_raw_ecs_calls, error/warning split, verbose mode, dual Validator.run() return)
+Last activity: 2026-03-02 — Completed 02-03 (parse_declared_deps, detect_undeclared_service_deps, Check 6 in run())
 
-Progress: [█████░░░░░] ~36%
+Progress: [█████░░░░░] ~43%
 
 ## Performance Metrics
 
@@ -41,11 +41,11 @@ Progress: [█████░░░░░] ~36%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-core-infrastructure | 4 | ~11 min | ~2.75 min |
-| 02-plugin-infrastructure | 2 | ~8 min | ~4 min |
+| 02-plugin-infrastructure | 3 | ~13 min | ~4.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03, 01-04, 02-01, 02-02
-- Trend: On track — Phase 2 plan 2 complete
+- Last 5 plans: 01-04, 02-01, 02-02, 02-03
+- Trend: On track — Phase 2 plan 3 complete
 
 *Updated after each plan completion*
 
@@ -81,6 +81,9 @@ Recent decisions affecting current work:
 - [02-02]: Alias detection flags only the assignment line, not subsequent alias calls — avoids false positives with variable shadowing
 - [02-02]: Validator.run() now returns (error_count, warning_count) — breaking change from single total; integration test updated
 - [02-02]: format_verbose() stores _verbose_str on violation objects; print_section checks field before falling back to formatter
+- [Phase 02-plugin-infrastructure]: detect_undeclared_service_deps takes plugin_dir (not path) — must cross-reference init.lua deps against all files in the directory
+- [Phase 02-plugin-infrastructure]: parse_declared_deps is local (not Validator.method) — only detect_undeclared_service_deps needs it
+- [Phase 02-plugin-infrastructure]: Both dep_parse_errors and service dep errors are CI-blocking — missing declaration is as bad as undeclared call
 
 ### Pending Todos
 
@@ -94,5 +97,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 02-02-PLAN.md — raw ECS call detection (evolved.spawn/id), error/warning severity split, verbose mode with rule refs, dual Validator.run() return
+Stopped at: Completed 02-03-PLAN.md — undeclared service dep detection (parse_declared_deps, detect_undeclared_service_deps, Check 6 in Validator.run())
 Resume file: None
