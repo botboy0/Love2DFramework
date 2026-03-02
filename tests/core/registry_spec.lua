@@ -596,6 +596,112 @@ describe("Registry", function()
 			assert.is_truthy(err:find("strict mode") or err:find("update failed"))
 		end)
 	end)
+
+	describe("draw_all()", function()
+		it("calls draw() on plugins that have a draw method", function()
+			local r = Registry.new()
+			local log = {}
+			local plugin = {
+				init = function(_self, _ctx)
+					table.insert(log, "init:p")
+				end,
+				draw = function(_self)
+					table.insert(log, "draw:p")
+				end,
+			}
+			r:register("p", plugin)
+			local ctx = make_ctx()
+			r:boot(ctx)
+			log = {}
+			r:draw_all()
+			assert.are.equal(1, #log)
+			assert.are.equal("draw:p", log[1])
+		end)
+
+		it("skips plugins without a draw method (no error)", function()
+			local r = Registry.new()
+			local log = {}
+			local plugin = {
+				init = function(_self, _ctx)
+					table.insert(log, "init:p")
+				end,
+				-- no draw field
+			}
+			r:register("p", plugin)
+			local ctx = make_ctx()
+			r:boot(ctx)
+			log = {}
+			assert.has_no.errors(function()
+				r:draw_all()
+			end)
+			assert.are.equal(0, #log)
+		end)
+
+		it("draw_all before boot is a no-op (no error)", function()
+			local r = Registry.new()
+			local plugin = {
+				init = function(_self, _ctx) end,
+				draw = function(_self)
+					error("should not be called before boot")
+				end,
+			}
+			r:register("p", plugin)
+			assert.has_no.errors(function()
+				r:draw_all()
+			end)
+		end)
+
+		it("tolerant mode: logs and continues when a plugin draw() errors", function()
+			local logged = {}
+			local r = Registry.new({
+				config = { error_mode = "tolerant" },
+				log = function(msg)
+					table.insert(logged, msg)
+				end,
+			})
+			local draw_log = {}
+			local bad_plugin = {
+				init = function(_self, _ctx) end,
+				draw = function(_self)
+					error("draw failed intentionally")
+				end,
+			}
+			local good_plugin = {
+				init = function(_self, _ctx) end,
+				draw = function(_self)
+					table.insert(draw_log, "draw:good")
+				end,
+			}
+			r:register("bad", bad_plugin)
+			r:register("good", good_plugin)
+			r:boot(make_ctx())
+			assert.has_no.errors(function()
+				r:draw_all()
+			end)
+			-- good_plugin should still draw
+			assert.are.equal(1, #draw_log)
+			assert.are.equal("draw:good", draw_log[1])
+			-- error should be logged
+			assert.is_true(#logged > 0)
+		end)
+
+		it("strict mode: propagates plugin draw() error", function()
+			local r = Registry.new() -- default = strict
+			local bad_plugin = {
+				init = function(_self, _ctx) end,
+				draw = function(_self)
+					error("draw failed in strict mode")
+				end,
+			}
+			r:register("bad", bad_plugin)
+			r:boot(make_ctx())
+			local ok, err = pcall(function()
+				r:draw_all()
+			end)
+			assert.is_false(ok)
+			assert.is_truthy(err:find("strict mode") or err:find("draw failed"))
+		end)
+	end)
 end)
 
 describe("plugin_list", function()
@@ -609,9 +715,9 @@ describe("plugin_list", function()
 		assert.are.equal("input", list[1].name)
 	end)
 
-	it("has the expected number of plugin entries (Phase 4+)", function()
+	it("has the expected number of plugin entries (Phase 4+, stacker added)", function()
 		local list = require("src.core.plugin_list")
-		-- Phase 4 added the assets plugin: input + assets = 2
-		assert.are.equal(2, #list)
+		-- input + assets + stacker = 3
+		assert.are.equal(3, #list)
 	end)
 end)

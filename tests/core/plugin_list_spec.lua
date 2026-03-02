@@ -22,8 +22,14 @@ describe("plugin_list", function()
 		assert.are.same({}, plugin_list[2].deps)
 	end)
 
-	it("has two entries total (input + assets)", function()
-		assert.are.equal(2, #plugin_list)
+	it("contains the stacker plugin as the third entry", function()
+		assert.are.equal("stacker", plugin_list[3].name)
+		assert.are.equal("src.plugins.stacker", plugin_list[3].module)
+		assert.are.same({}, plugin_list[3].deps)
+	end)
+
+	it("has three entries total (input + assets + stacker)", function()
+		assert.are.equal(3, #plugin_list)
 	end)
 
 	it("each entry has required fields when populated", function()

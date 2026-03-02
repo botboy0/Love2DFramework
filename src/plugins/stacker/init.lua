@@ -37,6 +37,19 @@ local COLORS = {
 	{ 0.00, 0.74, 0.83 },
 }
 
+--- Spawn an entity using the worlds handle.
+--- In single-world mode, uses worlds:spawn(). In dual-world mode, uses worlds:spawn_server()
+--- (game state entities belong to the server world).
+--- @param worlds table  The worlds handle from ctx.worlds
+--- @param components table  Component table (fragment -> value)
+local function worlds_spawn(worlds, components)
+	if worlds.server then
+		return worlds:spawn_server(components)
+	else
+		return worlds:spawn(components)
+	end
+end
+
 --- Initialize the plugin.
 --- Spawns the initial GameState and first StackBlock (the floor), then the first MovingBlock.
 --- @param ctx table { worlds, bus, config, services, transport }
@@ -50,7 +63,7 @@ function StackerPlugin:init(ctx)
 	self._state_query = evolved.builder():include(C.GameState):build()
 
 	-- Spawn singleton GameState
-	evolved.spawn({
+	worlds_spawn(self._worlds, {
 		[C.GameState] = {
 			score = 0,
 			active = true,
@@ -60,7 +73,7 @@ function StackerPlugin:init(ctx)
 	})
 
 	-- Spawn the floor block (layer 0)
-	evolved.spawn({
+	worlds_spawn(self._worlds, {
 		[C.StackBlock] = {
 			x = (SCREEN_W - START_W) / 2,
 			y = FLOOR_Y,
@@ -71,7 +84,7 @@ function StackerPlugin:init(ctx)
 	})
 
 	-- Spawn the first moving block one layer above the floor
-	evolved.spawn({
+	worlds_spawn(self._worlds, {
 		[C.MovingBlock] = {
 			x = (SCREEN_W - START_W) / 2,
 			y = FLOOR_Y - BLOCK_H,
@@ -207,7 +220,7 @@ function StackerPlugin:_try_place()
 
 	-- Spawn new StackBlock (structural — deferred)
 	evolved.defer()
-	evolved.spawn({
+	worlds_spawn(self._worlds, {
 		[C.StackBlock] = {
 			x = overlap_x,
 			y = new_y,
