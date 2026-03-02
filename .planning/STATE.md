@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 4 of 7 (Asset Pipeline)
-Plan: 1 of 4 in current phase (04-01 complete)
+Plan: 2 of 4 in current phase (04-02 complete)
 Status: In progress
-Last activity: 2026-03-02 - Completed 04-01: Vendor Lily/RTA, manifest parser, DrawableWrapper
+Last activity: 2026-03-02 - Completed 04-02: AssetLoader (Lily wrapper) and AtlasBuilder (RTA wrapper)
 
 Progress: [████████░░] ~65%
 
@@ -43,11 +43,11 @@ Progress: [████████░░] ~65%
 | 01-core-infrastructure | 4 | ~11 min | ~2.75 min |
 | 02-plugin-infrastructure | 3 | ~13 min | ~4.3 min |
 | 03-input-plugin (partial) | 2 | ~10 min | ~5 min |
-| 04-asset-pipeline | 1 | ~4 min | ~4 min |
+| 04-asset-pipeline | 2 | ~7 min | ~3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03, 03-01, 03-02, 04-01
-- Trend: On track — Phase 4 plan 1 complete
+- Last 5 plans: 03-01, 03-02, 04-01, 04-02
+- Trend: On track — Phase 4 plan 2 complete
 
 *Updated after each plan completion*
 
@@ -94,6 +94,10 @@ Recent decisions affecting current work:
 - [03-02]: .busted lpath = './?/init.lua' added to enable require('src.plugins.X') finding plugin init.lua files
 - [03-02]: love.touch nil-guarded in get_touch_points — love global may not exist in test environment
 - [04-01]: RTA is multi-file: vendored to lib/RuntimeTextureAtlas/ with lib/TA.lua as re-export wrapper (require("lib.RuntimeTextureAtlas"))
+- [04-02]: AssetLoader uses loadMulti for both load_manifest and load_single — consistent callback interface, simpler pending tracking
+- [04-02]: is_complete() tracks _manifest_complete boolean (set in onComplete) and _pending_singles counter — clear state model
+- [04-02]: AtlasBuilder canvas retrieval: try atlas:getCanvas() first, fall back to atlas._canvas field (handles both real RTA and stubs)
+- [04-02]: Auto-split algorithm: greedy descending-area bin-fill produces sub-groups named group_1, group_2, etc.
 - [04-01]: Manifest.parse returns (load_requests, groups) tuple — groups maps group_name -> [keys] for atlas-eligible images only
 - [04-01]: Image group derivation: atlas=false -> nil (standalone), explicit group= -> override, else derive from penultimate path segment
 - [04-01]: DrawableWrapper injectable via opts.draw_fn and opts.get_dimensions_fn — no love.graphics at module load time
@@ -118,5 +122,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 04-01-PLAN.md — vendor Lily/RTA, manifest parser, DrawableWrapper
+Stopped at: Completed 04-02-PLAN.md — AssetLoader (Lily wrapper) and AtlasBuilder (RTA wrapper)
 Resume file: None

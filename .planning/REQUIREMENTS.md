@@ -36,10 +36,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Asset Pipeline
 
-- [ ] **ASST-01**: Async asset loading via Lily prevents frame hitches during loading
+- [x] **ASST-01**: Async asset loading via Lily prevents frame hitches during loading
 - [x] **ASST-02**: Texture atlas packing via Runtime-TextureAtlas at startup reduces draw calls
 - [x] **ASST-03**: Asset pipeline capped at 4096x4096 atlas size for mobile GPU compatibility
-- [ ] **ASST-04**: Lily callbacks emit bus events only — no direct entity spawning mid-tick
+- [x] **ASST-04**: Lily callbacks emit bus events only — no direct entity spawning mid-tick
 
 ### Collision
 
@@ -116,10 +116,10 @@ Deferred to future release.
 | INPT-01 | Phase 3 | Complete |
 | INPT-02 | Phase 3 | Complete |
 | INPT-03 | Phase 3 | Complete |
-| ASST-01 | Phase 4 | Pending |
+| ASST-01 | Phase 4 | Complete |
 | ASST-02 | Phase 4 | Complete |
 | ASST-03 | Phase 4 | Complete |
-| ASST-04 | Phase 4 | Pending |
+| ASST-04 | Phase 4 | Complete |
 | COLL-01 | Phase 5 | Pending |
 | COLL-02 | Phase 5 | Pending |
 | COLL-03 | Phase 5 | Pending |
