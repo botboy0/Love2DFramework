@@ -269,6 +269,37 @@ function Registry:update_all(dt)
 	end
 end
 
+--- Call draw() on all booted plugins in boot order.
+--- Plugins without a draw method are silently skipped.
+--- In strict mode (default): errors from plugin:draw propagate.
+--- In tolerant mode: errors from plugin:draw are logged; remaining plugins still draw.
+--- Safe to call before boot() — _boot_order is empty so it is a no-op.
+function Registry:draw_all()
+	if self._error_mode == "tolerant" then
+		for _, entry in ipairs(self._boot_order) do
+			if entry.module.draw then
+				local ok, err = pcall(entry.module.draw, entry.module)
+				if not ok then
+					self._log(
+						string.format(
+							"[Registry] Plugin '%s' draw failed (tolerant mode): %s",
+							entry.name,
+							tostring(err)
+						)
+					)
+				end
+			end
+		end
+	else
+		-- Strict mode: let errors propagate
+		for _, entry in ipairs(self._boot_order) do
+			if entry.module.draw then
+				entry.module:draw()
+			end
+		end
+	end
+end
+
 --- Shut down all booted plugins in reverse boot order.
 --- Calls plugin:shutdown(ctx) for each plugin that defines it.
 --- Safe to call even if some plugins lack a shutdown method.

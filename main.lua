@@ -11,6 +11,9 @@ local _config = {
 	-- error_mode = "tolerant",  -- global error mode for all modules
 	-- error_modes = { bus = "strict", registry = "tolerant" },  -- per-module overrides
 	-- transport = nil,  -- set to a Transport instance to enable networking
+	input = {
+		place = { key = "space", sc = "space" },
+	},
 }
 
 local _registry
@@ -69,7 +72,10 @@ function love.update(_dt)
 end
 
 function love.draw()
-	-- Future: call registered render systems
+	if not _registry then
+		return
+	end
+	_registry:draw_all()
 end
 
 function love.quit()
