@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** A framework that enforces clean architecture by default — ECS-only game logic, event-bus-only communication, isolated plugins — so games stay maintainable as they grow.
-**Current focus:** Phase 2 — Plugin Infrastructure
+**Current focus:** Phase 3 — Input Plugin
 
 ## Current Position
 
-Phase: 2 of 7 (Plugin Infrastructure)
-Plan: 3 of 4 in current phase
+Phase: 3 of 7 (Input Plugin)
+Plan: 1 of 3 in current phase
 Status: In progress
-Last activity: 2026-03-02 — Completed 02-03 (parse_declared_deps, detect_undeclared_service_deps, Check 6 in run())
+Last activity: 2026-03-02 — Completed 03-01 (Registry:update_all(dt), baton vendored)
 
-Progress: [█████░░░░░] ~43%
+Progress: [██████░░░░] ~50%
 
 ## Performance Metrics
 
@@ -84,6 +84,9 @@ Recent decisions affecting current work:
 - [Phase 02-plugin-infrastructure]: detect_undeclared_service_deps takes plugin_dir (not path) — must cross-reference init.lua deps against all files in the directory
 - [Phase 02-plugin-infrastructure]: parse_declared_deps is local (not Validator.method) — only detect_undeclared_service_deps needs it
 - [Phase 02-plugin-infrastructure]: Both dep_parse_errors and service dep errors are CI-blocking — missing declaration is as bad as undeclared call
+- [03-01]: update_all follows exact tolerant/strict pcall pattern from boot() — symmetry makes the code predictable
+- [03-01]: Pre-boot update_all() is safe no-op — empty _boot_order means zero iterations, no guard branch needed
+- [03-01]: main.lua ordering: update_all(dt) -> receive_all -> bus:flush -> transport:flush — plugin updates emit events flushed same frame
 
 ### Pending Todos
 
@@ -97,5 +100,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 02-03-PLAN.md — undeclared service dep detection (parse_declared_deps, detect_undeclared_service_deps, Check 6 in Validator.run())
+Stopped at: Completed 03-01-PLAN.md — Registry:update_all(dt), baton vendored at lib/baton.lua
 Resume file: None
