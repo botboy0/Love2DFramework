@@ -164,12 +164,13 @@ function Validator.detect_globals(path, lines)
 	}
 
 	local violations = {}
-	-- Track curly-brace depth and function depth to avoid false positives.
-	-- Real global assignments occur at brace_depth == 0 AND function_depth == 0.
-	-- Inside table constructors ({...}) or function bodies, assignments are locals.
+	-- Track curly-brace depth and block depth to avoid false positives.
+	-- Real global assignments occur at brace_depth == 0 AND block_depth == 0.
+	-- Inside table constructors ({...}), function bodies, if/for/while/do blocks,
+	-- assignments are not top-level globals.
 	-- This is a conservative heuristic — real linting is done by selene.
 	local brace_depth = 0
-	local function_depth = 0
+	local block_depth = 0 -- counts ALL block-opening constructs (function, if, for, while, do, repeat)
 
 	for i, line in ipairs(lines) do
 		local stripped = line:match("^%s*(.-)%s*$")
@@ -178,7 +179,7 @@ function Validator.detect_globals(path, lines)
 		if stripped ~= "" and not stripped:match("^%-%-") then
 			-- Capture depths at the START of this line.
 			local depth_at_line_start = brace_depth
-			local fn_depth_at_line_start = function_depth
+			local blk_depth_at_line_start = block_depth
 
 			-- Update brace depth by counting { and } on this line.
 			for ch in stripped:gmatch(".") do
@@ -191,25 +192,58 @@ function Validator.detect_globals(path, lines)
 				end
 			end
 
-			-- Update function depth: function keyword opens, end closes (simplified).
-			-- We count `function` and `end` keywords to track function nesting.
-			-- This is imprecise for multiline constructs but sufficient for a heuristic.
-			if
-				stripped:match("^function%s+")
-				or stripped:match("^local%s+function%s+")
-				or stripped:match("%s+function%s*%(")
-				or stripped:match("=%s*function%s*%(")
-			then
-				function_depth = function_depth + 1
+			-- Update block depth: count ALL block-opening keywords.
+			-- Openers: function ... end, if ... then ... end, for ... do ... end,
+			--          while ... do ... end, do ... end, repeat ... until
+			-- Closers: end, until (closes repeat)
+			-- Note: `then` and `do` alone don't open a new block (they're part of
+			-- the if/for/while opener that starts the block). We count the opening
+			-- keyword (function, if, for, while, do-standalone, repeat).
+			-- Heuristic: count `end` and `until` as closers; count block-opening patterns as openers.
+			local opens = 0
+			local closes = 0
+
+			-- Count function openers (any `function` keyword on the line)
+			-- Use gsub to count occurrences
+			local _, fn_count = stripped:gsub("%f[%w_]function%f[^%w_]", "")
+			opens = opens + fn_count
+
+			-- Count if/for/while/repeat openers (standalone keywords starting a block)
+			-- `if`, `for`, `while`, `repeat` each open a block closed by `end`/`until`
+			local _, if_count = stripped:gsub("%f[%w_]if%f[^%w_]", "")
+			local _, for_count = stripped:gsub("%f[%w_]for%f[^%w_]", "")
+			local _, while_count = stripped:gsub("%f[%w_]while%f[^%w_]", "")
+			local _, repeat_count = stripped:gsub("%f[%w_]repeat%f[^%w_]", "")
+			opens = opens + if_count + for_count + while_count + repeat_count
+
+			-- Standalone `do` (not `do` after for/while — those are part of the loop header)
+			-- Detect `do` on its own or following non-for/while context. Simplified: count all `do`
+			-- occurrences and subtract those that are part of for/while (their openers are already counted).
+			-- Simplified approach: count `do` that appears standalone on a line (not after for/while content)
+			local _, do_count = stripped:gsub("%f[%w_]do%f[^%w_]", "")
+			-- Subtract `do` instances that are part of `for`/`while` headers (already counted above)
+			-- For/while blocks: `do` closes the header but the block itself was opened by `for`/`while`.
+			-- So we should NOT double-count. But `do` in `while x do` is not opening a NEW block —
+			-- the `while` already counted it. Use simpler approach:
+			-- Only count standalone `do` (line matches `^do%s*$` or `^do%-%-`) as extra block opener.
+			do_count = 0 -- Reset: don't double-count do from for/while headers
+			if stripped:match("^do%s*$") or stripped:match("^do%-%-") or stripped:match("^do%s+") then
+				do_count = 1
 			end
-			if stripped:match("^end%s*$") or stripped == "end" or stripped:match("^end%-%-") then
-				if function_depth > 0 then
-					function_depth = function_depth - 1
-				end
+			opens = opens + do_count
+
+			-- Count closers: `end` and `until`
+			local _, end_count = stripped:gsub("%f[%w_]end%f[^%w_]", "")
+			local _, until_count = stripped:gsub("%f[%w_]until%f[^%w_]", "")
+			closes = closes + end_count + until_count
+
+			block_depth = block_depth + opens - closes
+			if block_depth < 0 then
+				block_depth = 0
 			end
 
-			-- Only flag potential globals when NOT inside a table literal or function body.
-			if depth_at_line_start == 0 and fn_depth_at_line_start == 0 then
+			-- Only flag potential globals when NOT inside a table literal or any block.
+			if depth_at_line_start == 0 and blk_depth_at_line_start == 0 then
 				-- Look for: identifier = (not ==, ~=, <=, >=)
 				local name = stripped:match("^([%a_][%w_]*)%s*=[^=]")
 				if name and not keywords[name] and not ALLOWED_GLOBALS[name] then
