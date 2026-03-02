@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Emitting an event inside `bus:on()` handler logs a warning and discards the emission — the flush does not recurse
   3. Events emitted during `update()` are not delivered until `bus:flush()` is called — handlers see no events mid-update
   4. An entity spawned via `worlds` helpers exists in the correct world; raw `evolved.spawn()` is not reachable from plugin code
-  5. Shutting down triggers `plugin:quit()` on all registered plugins in reverse boot order
+  5. Shutting down triggers `plugin:shutdown()` on all registered plugins in reverse boot order
 **Plans**: 4 plans in 3 waves
 
 Plans:
@@ -62,7 +62,7 @@ Plans:
 **Requirements**: INPT-01, INPT-02, INPT-03
 **Success Criteria** (what must be TRUE):
   1. An action defined in the input config (e.g., `"jump"`) returns a pressed state regardless of whether the trigger is a keyboard key, gamepad button, or touch region
-  2. The input plugin boots and shuts down via the standard `plugin:init(ctx)` / `plugin:quit()` lifecycle without special-casing in `main.lua`
+  2. The input plugin boots and shuts down via the standard `plugin:init(ctx)` / `plugin:shutdown()` lifecycle without special-casing in `main.lua`
   3. A test using the plugin harness can exercise input state without a physical device attached
 **Plans**: 2 plans in 2 waves
 
