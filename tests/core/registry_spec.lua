@@ -475,6 +475,127 @@ describe("Registry", function()
 			end)
 		end)
 	end)
+
+	describe("update_all()", function()
+		it("calls update(dt) on plugins that have an update method", function()
+			local r = Registry.new()
+			local log = {}
+			local plugin = {
+				init = function(_self, _ctx)
+					table.insert(log, "init:p")
+				end,
+				update = function(_self, _dt)
+					table.insert(log, "update:p")
+				end,
+			}
+			r:register("p", plugin)
+			local ctx = make_ctx()
+			r:boot(ctx)
+			log = {}
+			r:update_all(0.016)
+			assert.are.equal(1, #log)
+			assert.are.equal("update:p", log[1])
+		end)
+
+		it("skips plugins without update method (no error)", function()
+			local r = Registry.new()
+			local log = {}
+			local plugin = {
+				init = function(_self, _ctx)
+					table.insert(log, "init:p")
+				end,
+				-- no update field
+			}
+			r:register("p", plugin)
+			local ctx = make_ctx()
+			r:boot(ctx)
+			log = {}
+			assert.has_no.errors(function()
+				r:update_all(0.016)
+			end)
+			assert.are.equal(0, #log)
+		end)
+
+		it("passes dt argument through correctly", function()
+			local r = Registry.new()
+			local received_dt
+			local plugin = {
+				init = function(_self, _ctx) end,
+				update = function(_self, dt)
+					received_dt = dt
+				end,
+			}
+			r:register("p", plugin)
+			r:boot(make_ctx())
+			r:update_all(0.123)
+			assert.are.equal(0.123, received_dt)
+		end)
+
+		it("update_all before boot is a no-op (no error)", function()
+			local r = Registry.new()
+			local plugin = {
+				init = function(_self, _ctx) end,
+				update = function(_self, _dt)
+					error("should not be called before boot")
+				end,
+			}
+			r:register("p", plugin)
+			assert.has_no.errors(function()
+				r:update_all(0.016)
+			end)
+		end)
+
+		it("tolerant mode: logs and continues when a plugin update() errors", function()
+			local logged = {}
+			local r = Registry.new({
+				config = { error_mode = "tolerant" },
+				log = function(msg)
+					table.insert(logged, msg)
+				end,
+			})
+			local update_log = {}
+			local bad_plugin = {
+				init = function(_self, _ctx) end,
+				update = function(_self, _dt)
+					error("update failed intentionally")
+				end,
+			}
+			local good_plugin = {
+				init = function(_self, _ctx) end,
+				update = function(_self, _dt)
+					table.insert(update_log, "update:good")
+				end,
+			}
+			r:register("bad", bad_plugin)
+			r:register("good", good_plugin)
+			r:boot(make_ctx())
+			assert.has_no.errors(function()
+				r:update_all(0.016)
+			end)
+			-- good_plugin should still update
+			assert.are.equal(1, #update_log)
+			assert.are.equal("update:good", update_log[1])
+			-- error should be logged
+			assert.is_true(#logged > 0)
+		end)
+
+		it("strict mode: propagates plugin update() error", function()
+			local r = Registry.new() -- default = strict
+			local bad_plugin = {
+				init = function(_self, _ctx) end,
+				update = function(_self, _dt)
+					error("update failed in strict mode")
+				end,
+			}
+			r:register("bad", bad_plugin)
+			r:boot(make_ctx())
+			local ok, err = pcall(function()
+				r:update_all(0.016)
+			end)
+			assert.is_false(ok)
+			assert.is_truthy(err:find("strict mode") or err:find("update failed"))
+		end)
+	end)
 end)
 
 describe("plugin_list", function()
