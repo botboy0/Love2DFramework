@@ -23,4 +23,9 @@ return {
 		module = "src.plugins.assets",
 		deps = {},
 	},
+	{
+		name = "stacker",
+		module = "src.plugins.stacker",
+		deps = {},
+	},
 }

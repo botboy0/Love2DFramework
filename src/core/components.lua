@@ -1,11 +1,15 @@
---- Shared component fragment definitions.
---- All fragment IDs are created here and used by both server and client worlds.
---- This is the single source of truth for component identity in the ECS.
----
---- This file ships EMPTY. Each game defines its own components:
----   Components.Position, Components.Velocity = evolved.id(2)
----
---- Do NOT define components in plugin files — only here.
---- The architecture validator (Phase 2) enforces this rule.
+--- Shared ECS fragment IDs for all game plugins.
+--- Games define their own fragments here; the framework is genre-agnostic.
 
-return {}
+local evolved = require("lib.evolved")
+
+--- StackBlock: { x, y, w, h, color } — a placed block on the tower.
+--- MovingBlock: { x, y, w, h, speed, dir } — the current oscillating block.
+--- GameState:   { score, active, tower_top_x, tower_top_w } — singleton game state.
+local StackBlock, MovingBlock, GameState = evolved.id(3)
+
+return {
+	StackBlock = StackBlock,
+	MovingBlock = MovingBlock,
+	GameState = GameState,
+}
