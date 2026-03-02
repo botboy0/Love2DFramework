@@ -10,10 +10,10 @@ describe("plugin_list", function()
 		assert.is_table(plugin_list)
 	end)
 
-	it("is empty until game plugins are added", function()
-		-- plugin_list starts empty; game plugins are added in Phase 3+
-		-- This test documents the expected initial state.
-		assert.are.equal(0, #plugin_list)
+	it("contains the input plugin", function()
+		-- Phase 3 added the input plugin as the first boot manifest entry.
+		assert.are.equal(1, #plugin_list)
+		assert.are.equal("input", plugin_list[1].name)
 	end)
 
 	it("each entry has required fields when populated", function()

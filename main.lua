@@ -15,6 +15,7 @@ local _config = {
 
 local _registry
 local _ctx
+local _input_plugin
 
 function love.load()
 	-- Resolve bus error mode from config
@@ -43,6 +44,9 @@ function love.load()
 
 	-- Boot all plugins in topological dependency order
 	_registry:boot(_ctx)
+
+	-- Store a reference to the input plugin for callback forwarding
+	_input_plugin = require("src.plugins.input")
 end
 
 function love.update(_dt)
@@ -71,5 +75,29 @@ end
 function love.quit()
 	if _registry and _ctx then
 		_registry:shutdown(_ctx)
+	end
+end
+
+function love.joystickadded(joystick)
+	if _input_plugin and _input_plugin.on_joystick_added then
+		_input_plugin:on_joystick_added(joystick)
+	end
+end
+
+function love.joystickremoved(joystick)
+	if _input_plugin and _input_plugin.on_joystick_removed then
+		_input_plugin:on_joystick_removed(joystick)
+	end
+end
+
+function love.touchpressed(id, x, y, _dx, _dy, _pressure)
+	if _input_plugin and _input_plugin.on_touch_pressed then
+		_input_plugin:on_touch_pressed(id, x, y)
+	end
+end
+
+function love.touchreleased(id, x, y, _dx, _dy, _pressure)
+	if _input_plugin and _input_plugin.on_touch_released then
+		_input_plugin:on_touch_released(id, x, y)
 	end
 end

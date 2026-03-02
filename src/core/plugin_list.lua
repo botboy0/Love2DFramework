@@ -12,4 +12,10 @@
 ---     registry:register(entry.name, entry.module, { deps = entry.deps })
 ---   end
 
-return {}
+return {
+	{
+		name = "input",
+		module = "src.plugins.input",
+		deps = {},
+	},
+}
