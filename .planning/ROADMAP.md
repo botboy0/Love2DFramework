@@ -54,7 +54,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Canonical plugin config usage + harness dep enforcement proxy (Wave 1)
 - [x] 02-02-PLAN.md — Validator raw ECS call detection + verbose flag + error/warning separation (Wave 1)
-- [ ] 02-03-PLAN.md — Validator undeclared service dependency cross-reference (Wave 2)
+- [x] 02-03-PLAN.md — Validator undeclared service dependency cross-reference (Wave 2)
 
 ### Phase 3: Input Plugin
 **Goal**: Game code can query player input actions without knowing whether the source is keyboard, gamepad, or touch
