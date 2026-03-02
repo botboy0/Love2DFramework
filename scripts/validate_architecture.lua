@@ -87,6 +87,27 @@ local function read_lines(path)
 	return lines
 end
 
+--- Create a stub test spec file with a pending placeholder.
+--- Creates parent directories as needed.
+--- @param spec_path string  Path to the spec file to create
+--- @param module_name string  Module name for the describe block
+--- @return boolean  true if created successfully
+local function create_stub_spec(spec_path, module_name)
+	local dir = spec_path:match("^(.+)/[^/]+$")
+	if dir then
+		os.execute('mkdir -p "' .. dir .. '"')
+	end
+	local f = io.open(spec_path, "w")
+	if not f then
+		return false
+	end
+	f:write('describe("' .. module_name .. '", function()\n')
+	f:write('\tpending("TODO: add tests")\n')
+	f:write("end)\n")
+	f:close()
+	return true
+end
+
 --- Extract the plugin name from a src/plugins/<name>/... path.
 --- Returns nil if the path is not inside src/plugins/.
 --- @param path string
@@ -616,10 +637,6 @@ function Validator.run(opts)
 	local warning_count = 0
 	local verbose = opts.verbose or false
 
-	if opts.fix then
-		print("Note: --fix is not yet implemented. Reporting violations only.")
-	end
-
 	-- Collect src/ files
 	local src_files = find_lua_files("src")
 
@@ -705,6 +722,23 @@ function Validator.run(opts)
 
 	-- 4. Missing test files
 	local missing_tests = Validator.detect_missing_tests(src_files)
+
+	-- Auto-fix: create stub spec files when --fix is passed
+	if opts.fix and #missing_tests > 0 then
+		local fixed = 0
+		for _, v in ipairs(missing_tests) do
+			local module_name = v.src_file:match("([^/]+)%.lua$") or "module"
+			if create_stub_spec(v.expected_test, module_name) then
+				fixed = fixed + 1
+			end
+		end
+		if fixed > 0 then
+			print("Fixed: created " .. fixed .. " missing test file(s)")
+		end
+		-- Re-detect after fix to get accurate remaining count
+		missing_tests = Validator.detect_missing_tests(src_files)
+	end
+
 	print_section("Missing Test Files", missing_tests, function(v)
 		return v.src_file .. " -> missing " .. v.expected_test
 	end, verbose)
