@@ -306,7 +306,7 @@ describe("main.lua lifecycle", function()
 		it("Bus.new defaults to tolerant when config has no error_mode", function()
 			local config = {}
 			local bus_error_mode = (config.error_modes and config.error_modes.bus) or config.error_mode or "tolerant"
-			local bus = Bus.new({ error_mode = bus_error_mode })
+			local bus = Bus.new({ error_mode = bus_error_mode, log = function() end })
 			assert.is_not_nil(bus)
 			-- Tolerant mode: handler error does not propagate from flush
 			bus:on("test", function()
