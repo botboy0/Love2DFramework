@@ -521,6 +521,61 @@ describe("Validator.detect_undeclared_service_deps", function()
 		assert.is_not_nil(dep_parse_errors, "Should return dep_parse_errors table")
 		assert.is_true(#dep_parse_errors >= 1, "Missing init.lua should produce a dep parse error")
 	end)
+
+	it("parses multi-line deps declaration", function()
+		local init_content = table.concat({
+			"local MyPlugin = {}",
+			"MyPlugin.deps = {",
+			"  'inventory',",
+			"  'crafting',",
+			"}",
+			"return MyPlugin",
+		}, "\n") .. "\n"
+		local plugin_dir = make_plugin(init_content, {
+			["systems/harvest.lua"] = "local s = ctx.services:get('inventory')\n",
+		})
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.equals(0, #dep_parse_errors, "Multi-line deps should parse without errors")
+		assert.equals(0, #errors, "Declared dep 'inventory' should not be flagged")
+	end)
+
+	it("detects undeclared dep with multi-line declaration", function()
+		local init_content = table.concat({
+			"local MyPlugin = {}",
+			"MyPlugin.deps = {",
+			"  'inventory',",
+			"}",
+			"return MyPlugin",
+		}, "\n") .. "\n"
+		local plugin_dir = make_plugin(init_content, {
+			["systems/harvest.lua"] = "local s = ctx.services:get('crafting')\n",
+		})
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.equals(0, #dep_parse_errors, "Multi-line deps should parse without errors")
+		assert.is_true(#errors >= 1, "Undeclared 'crafting' should be flagged")
+		local found = false
+		for _, e in ipairs(errors) do
+			if e.service == "crafting" then
+				found = true
+			end
+		end
+		assert.is_true(found, "Error should reference undeclared service 'crafting'")
+	end)
+
+	it("parses multi-line empty deps", function()
+		local init_content = table.concat({
+			"local MyPlugin = {}",
+			"MyPlugin.deps = {",
+			"}",
+			"return MyPlugin",
+		}, "\n") .. "\n"
+		local plugin_dir = make_plugin(init_content, {
+			["systems/foo.lua"] = "local x = services:get('foo')\n",
+		})
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.equals(0, #dep_parse_errors, "Multi-line empty deps should parse cleanly")
+		assert.is_true(#errors >= 1, "services:get('foo') should be flagged when deps is empty")
+	end)
 end)
 
 -------------------------------------------------------------------------------

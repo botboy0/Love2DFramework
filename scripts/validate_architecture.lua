@@ -510,22 +510,49 @@ end
 -------------------------------------------------------------------------------
 
 --- Parse the deps declaration from a plugin's init.lua lines.
---- Looks for a single-line declaration: MyPlugin.deps = { 'dep1', 'dep2' }
+--- Supports both single-line and multi-line declarations:
+---   MyPlugin.deps = { 'dep1', 'dep2' }          -- single-line
+---   MyPlugin.deps = {                             -- multi-line
+---     'dep1',
+---     'dep2',
+---   }
 --- Returns an array of declared dep names, or nil if no declaration found.
 ---
 --- @param lines string[]  Lines from the plugin's init.lua
 --- @return string[]|nil  Array of declared dep names, or nil if not parseable
 local function parse_declared_deps(lines)
-	for _, line in ipairs(lines) do
-		-- Match: SomeName.deps = { ... }  (single-line, greedy-safe)
-		local body = line:match("^%s*[%a_][%w_]*%.deps%s*=%s*{(.-)}")
-		if body ~= nil then
-			-- body found — even empty string means "empty deps" (return {})
-			local deps = {}
-			for name in body:gmatch("[\"']([%a_][%w_]*)[\"']") do
-				deps[#deps + 1] = name
+	for i, line in ipairs(lines) do
+		-- Match: SomeName.deps = { ... (opening brace, may or may not close on same line)
+		local after_brace = line:match("^%s*[%a_][%w_]*%.deps%s*=%s*{(.*)")
+		if after_brace ~= nil then
+			-- Check if the closing brace is on the same line
+			local body = after_brace:match("^(.-)}")
+			if body then
+				-- Single-line: SomeName.deps = { 'a', 'b' }
+				local deps = {}
+				for name in body:gmatch("[\"']([%a_][%w_]*)[\"']") do
+					deps[#deps + 1] = name
+				end
+				return deps
+			else
+				-- Multi-line: collect lines until closing brace
+				local parts = { after_brace }
+				for j = i + 1, #lines do
+					local closing = lines[j]:match("^(.-)}")
+					if closing then
+						parts[#parts + 1] = closing
+						break
+					else
+						parts[#parts + 1] = lines[j]
+					end
+				end
+				local full_body = table.concat(parts, "\n")
+				local deps = {}
+				for name in full_body:gmatch("[\"']([%a_][%w_]*)[\"']") do
+					deps[#deps + 1] = name
+				end
+				return deps
 			end
-			return deps
 		end
 	end
 	return nil
@@ -558,7 +585,7 @@ function Validator.detect_undeclared_service_deps(plugin_dir)
 	local declared_deps = parse_declared_deps(init_lines)
 	if declared_deps == nil then
 		dep_parse_errors[#dep_parse_errors + 1] = {
-			message = "No parseable 'Module.deps = { ... }' declaration found -- deps must be on a single line",
+			message = "No parseable 'Module.deps = { ... }' declaration found",
 		}
 		return errors, dep_parse_errors
 	end
