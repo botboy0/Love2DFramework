@@ -454,17 +454,64 @@ end
 -- Report formatting
 -------------------------------------------------------------------------------
 
+--- Format a violation with verbose context: surrounding lines + rule reference.
+--- @param file     string    File path
+--- @param line_num number    1-based line number of the violation
+--- @param lines    string[]  All file lines (used for context)
+--- @param message  string    Violation message
+--- @param rule_ref string|nil  Optional CLAUDE.md rule reference
+--- @return string  Multi-line formatted string
+local function format_verbose(file, line_num, lines, message, rule_ref)
+	local parts = {}
+	parts[#parts + 1] = file .. ":" .. line_num .. ": " .. message
+	if rule_ref then
+		parts[#parts + 1] = "  Rule: " .. rule_ref
+	end
+	-- Show line_num-1, line_num (marked), line_num+1
+	for _, n in ipairs({ line_num - 1, line_num, line_num + 1 }) do
+		if n >= 1 and n <= #lines then
+			local marker = (n == line_num) and "  <--" or ""
+			parts[#parts + 1] = "  > " .. n .. ":  " .. lines[n] .. marker
+		end
+	end
+	return table.concat(parts, "\n")
+end
+
 --- Print a violation report section.
 --- @param title      string
 --- @param violations table[]
 --- @param formatter  function(v) -> string
-local function print_section(title, violations, formatter)
+--- @param verbose    boolean|nil   If true, use verbose formatter
+local function print_section(title, violations, formatter, verbose)
 	if #violations == 0 then
 		return
 	end
 	print("\n[" .. title .. "] " .. #violations .. " violation(s):")
 	for _, v in ipairs(violations) do
-		print("  " .. formatter(v))
+		if verbose and v._verbose_str then
+			print(v._verbose_str)
+		else
+			print("  " .. formatter(v))
+		end
+	end
+end
+
+--- Print a warning section (prefixed with [WARNING]).
+--- @param title    string
+--- @param warnings table[]
+--- @param formatter function(v) -> string
+--- @param verbose   boolean|nil
+local function print_warning_section(title, warnings, formatter, verbose)
+	if #warnings == 0 then
+		return
+	end
+	print("\n[WARNING: " .. title .. "] " .. #warnings .. " warning(s):")
+	for _, v in ipairs(warnings) do
+		if verbose and v._verbose_str then
+			print(v._verbose_str)
+		else
+			print("  " .. formatter(v))
+		end
 	end
 end
 
@@ -472,12 +519,14 @@ end
 -- Main entry point
 -------------------------------------------------------------------------------
 
---- Run all checks and return total violation count.
---- @param opts table  { fix: boolean, silent: boolean }
---- @return number  Total violation count
+--- Run all checks and return (error_count, warning_count).
+--- @param opts table  { fix: boolean, silent: boolean, verbose: boolean }
+--- @return number, number  error_count, warning_count
 function Validator.run(opts)
 	opts = opts or {}
-	local total = 0
+	local error_count = 0
+	local warning_count = 0
+	local verbose = opts.verbose or false
 
 	if opts.fix then
 		print("Note: --fix is not yet implemented. Reporting violations only.")
@@ -497,53 +546,125 @@ function Validator.run(opts)
 	-- 1. Undeclared globals in all src/ files
 	local global_violations = {}
 	for _, path in ipairs(src_files) do
-		local v = Validator.detect_globals(path)
+		local file_lines = verbose and read_lines(path) or nil
+		local v = Validator.detect_globals(path, file_lines)
 		for _, violation in ipairs(v) do
 			violation.file = path
+			if verbose and file_lines then
+				violation._verbose_str = format_verbose(
+					path,
+					violation.line_num,
+					file_lines,
+					"global `" .. violation.name .. "`",
+					'CLAUDE.md SS5 -- "No global mutable state outside the ECS world"'
+				)
+			end
 			global_violations[#global_violations + 1] = violation
 		end
 	end
 	print_section("Undeclared Globals", global_violations, function(v)
 		return v.file .. ":" .. v.line_num .. ": global `" .. v.name .. "`"
-	end)
-	total = total + #global_violations
+	end, verbose)
+	error_count = error_count + #global_violations
 
 	-- 2. Cross-plugin imports
 	local import_violations = {}
 	for _, path in ipairs(plugin_files) do
-		local v = Validator.detect_cross_plugin_imports(path)
+		local file_lines = verbose and read_lines(path) or nil
+		local v = Validator.detect_cross_plugin_imports(path, file_lines)
 		for _, violation in ipairs(v) do
 			violation.file = path
+			if verbose and file_lines then
+				violation._verbose_str = format_verbose(
+					path,
+					violation.line_num,
+					file_lines,
+					"plugin `" .. violation.from_plugin .. "` imports `" .. violation.to_plugin .. "`",
+					'CLAUDE.md SS4 -- "No plugin may access another plugin\'s internals"'
+				)
+			end
 			import_violations[#import_violations + 1] = violation
 		end
 	end
 	print_section("Cross-Plugin Imports", import_violations, function(v)
 		return v.file .. ":" .. v.line_num .. ": plugin `" .. v.from_plugin .. "` imports `" .. v.to_plugin .. "`"
-	end)
-	total = total + #import_violations
+	end, verbose)
+	error_count = error_count + #import_violations
 
 	-- 3. Game logic outside ECS systems
 	local logic_violations = {}
 	for _, path in ipairs(src_files) do
-		local v = Validator.detect_logic_outside_ecs(path)
+		local file_lines = verbose and read_lines(path) or nil
+		local v = Validator.detect_logic_outside_ecs(path, file_lines)
 		for _, violation in ipairs(v) do
 			violation.file = path
+			if verbose and file_lines then
+				violation._verbose_str = format_verbose(
+					path,
+					violation.line_num,
+					file_lines,
+					violation.reason,
+					'CLAUDE.md SS1 -- "All game logic MUST live in ECS systems"'
+				)
+			end
 			logic_violations[#logic_violations + 1] = violation
 		end
 	end
 	print_section("Game Logic Outside ECS", logic_violations, function(v)
 		return v.file .. ":" .. v.line_num .. ": " .. v.reason
-	end)
-	total = total + #logic_violations
+	end, verbose)
+	error_count = error_count + #logic_violations
 
 	-- 4. Missing test files
 	local missing_tests = Validator.detect_missing_tests(src_files)
 	print_section("Missing Test Files", missing_tests, function(v)
 		return v.src_file .. " -> missing " .. v.expected_test
-	end)
-	total = total + #missing_tests
+	end, verbose)
+	error_count = error_count + #missing_tests
 
-	return total
+	-- 5. Raw ECS calls in plugin files
+	local ecs_errors = {}
+	local ecs_warnings = {}
+	for _, path in ipairs(plugin_files) do
+		local file_lines = read_lines(path)
+		local errs, warns = Validator.detect_raw_ecs_calls(path, file_lines)
+		for _, e in ipairs(errs) do
+			e.file = path
+			if verbose and file_lines then
+				e._verbose_str = format_verbose(
+					path,
+					e.line_num,
+					file_lines,
+					e.message,
+					'CLAUDE.md SS1 -- "All game logic MUST live in ECS systems"'
+				)
+			end
+			ecs_errors[#ecs_errors + 1] = e
+		end
+		for _, w in ipairs(warns) do
+			w.file = path
+			if verbose and file_lines then
+				w._verbose_str = format_verbose(
+					path,
+					w.line_num,
+					file_lines,
+					w.message,
+					'CLAUDE.md SS5 -- "No global mutable state outside the ECS world"'
+				)
+			end
+			ecs_warnings[#ecs_warnings + 1] = w
+		end
+	end
+	print_section("Raw ECS Calls", ecs_errors, function(v)
+		return v.file .. ":" .. v.line_num .. ": " .. v.message
+	end, verbose)
+	print_warning_section("ECS Require Warnings", ecs_warnings, function(v)
+		return v.file .. ":" .. v.line_num .. ": " .. v.message
+	end, verbose)
+	error_count = error_count + #ecs_errors
+	warning_count = warning_count + #ecs_warnings
+
+	return error_count, warning_count
 end
 
 -------------------------------------------------------------------------------
@@ -556,19 +677,26 @@ end
 -- We check arg[0] for the script name.
 if arg and arg[0] and (arg[0]:match("validate_architecture") or arg[0]:match("validate%-architecture")) then
 	local fix = false
+	local verbose = false
 	for _, a in ipairs(arg) do
 		if a == "--fix" then
 			fix = true
+		elseif a == "--verbose" then
+			verbose = true
 		end
 	end
 
-	local total = Validator.run({ fix = fix })
+	local errs, warns = Validator.run({ fix = fix, verbose = verbose })
 
-	if total == 0 then
+	if warns and warns > 0 then
+		print("(" .. warns .. " warning(s))")
+	end
+
+	if errs == 0 then
 		print("Architecture check passed: no violations found.")
 		os.exit(0)
 	else
-		print("\nArchitecture check FAILED: " .. total .. " violation(s) found.")
+		print("\nArchitecture check FAILED: " .. errs .. " violation(s) found.")
 		os.exit(1)
 	end
 end

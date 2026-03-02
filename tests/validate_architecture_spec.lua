@@ -401,12 +401,20 @@ end)
 -------------------------------------------------------------------------------
 
 describe("Validator.run", function()
-	it("exits cleanly on a project with no violations", function()
+	it("exits cleanly on a project with no violations (dual return)", function()
 		-- Run against the actual project. Should find no violations since:
 		-- - All src/ .lua files have corresponding tests/ _spec.lua mirrors
 		-- - No plugins exist yet (no cross-plugin import violations)
 		-- - No undeclared globals in src/ files
-		local total = Validator.run({ silent = true })
-		assert.equals(0, total, "Clean project should have zero violations")
+		-- Validator.run now returns (error_count, warning_count)
+		local errs, warns = Validator.run({ silent = true })
+		assert.equals(0, errs, "Clean project should have zero errors")
+		assert.is_not_nil(warns, "run() should return a second value (warning_count)")
+	end)
+
+	it("returns warning_count as second return value", function()
+		local errs, warns = Validator.run({ silent = true })
+		assert.is_number(errs, "First return value should be a number (error_count)")
+		assert.is_number(warns, "Second return value should be a number (warning_count)")
 	end)
 end)
