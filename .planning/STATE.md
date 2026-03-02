@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-02T01:33:50.149Z"
+last_updated: "2026-03-02T02:42:42Z"
 progress:
   total_phases: 3
   completed_phases: 3
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** A framework that enforces clean architecture by default — ECS-only game logic, event-bus-only communication, isolated plugins — so games stay maintainable as they grow.
-**Current focus:** Phase 3 — Input Plugin
+**Current focus:** Phase 4 — Asset Pipeline
 
 ## Current Position
 
-Phase: 3 of 7 (Input Plugin)
-Plan: 2 of 3 in current phase
+Phase: 4 of 7 (Asset Pipeline)
+Plan: 1 of 4 in current phase (04-01 complete)
 Status: In progress
-Last activity: 2026-03-02 - Completed quick task 1: Fix ROADMAP plugin:quit() → plugin:shutdown() naming
+Last activity: 2026-03-02 - Completed 04-01: Vendor Lily/RTA, manifest parser, DrawableWrapper
 
-Progress: [███████░░░] ~58%
+Progress: [████████░░] ~65%
 
 ## Performance Metrics
 
@@ -43,10 +43,11 @@ Progress: [███████░░░] ~58%
 | 01-core-infrastructure | 4 | ~11 min | ~2.75 min |
 | 02-plugin-infrastructure | 3 | ~13 min | ~4.3 min |
 | 03-input-plugin (partial) | 2 | ~10 min | ~5 min |
+| 04-asset-pipeline | 1 | ~4 min | ~4 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02, 02-03, 03-01, 03-02
-- Trend: On track — Phase 3 plan 2 complete
+- Last 5 plans: 02-03, 03-01, 03-02, 04-01
+- Trend: On track — Phase 4 plan 1 complete
 
 *Updated after each plan completion*
 
@@ -92,6 +93,11 @@ Recent decisions affecting current work:
 - [03-02]: touch_regions.lua uses _get_dimensions() injection for test isolation (no love.graphics in tests)
 - [03-02]: .busted lpath = './?/init.lua' added to enable require('src.plugins.X') finding plugin init.lua files
 - [03-02]: love.touch nil-guarded in get_touch_points — love global may not exist in test environment
+- [04-01]: RTA is multi-file: vendored to lib/RuntimeTextureAtlas/ with lib/TA.lua as re-export wrapper (require("lib.RuntimeTextureAtlas"))
+- [04-01]: Manifest.parse returns (load_requests, groups) tuple — groups maps group_name -> [keys] for atlas-eligible images only
+- [04-01]: Image group derivation: atlas=false -> nil (standalone), explicit group= -> override, else derive from penultimate path segment
+- [04-01]: DrawableWrapper injectable via opts.draw_fn and opts.get_dimensions_fn — no love.graphics at module load time
+- [04-01]: Test spy helper uses setmetatable __call (not bare function) to allow field assignment in Lua 5.1
 
 ### Pending Todos
 
@@ -112,5 +118,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed quick task 2 — validate_architecture --fix flag for missing test files
+Stopped at: Completed 04-01-PLAN.md — vendor Lily/RTA, manifest parser, DrawableWrapper
 Resume file: None
