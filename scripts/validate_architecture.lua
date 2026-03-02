@@ -360,6 +360,97 @@ function Validator.detect_logic_outside_ecs(path, lines)
 end
 
 -------------------------------------------------------------------------------
+-- Detection: raw ECS calls in plugin files
+-------------------------------------------------------------------------------
+
+--- Detect raw evolved.spawn() / evolved.id() calls in plugin files.
+--- These violate PLUG-03 and PLUG-04 — plugins must use worlds:spawn_server()
+--- or worlds:spawn_client() instead of raw evolved API.
+---
+--- Also warns (but does not error) on require("lib.evolved") in plugin files,
+--- since that may be legitimate in rare cases but warrants review.
+---
+--- examples/ and non-plugin paths excluded by the ^src/plugins/ path guard.
+---
+--- @param path  string    File path to scan
+--- @param lines string[]  Pre-read lines (optional, reads file if nil)
+--- @return table[], table[]  errors, warnings
+---   errors:   { line_num, line, kind, message }
+---   warnings: { line_num, line, kind, message }
+function Validator.detect_raw_ecs_calls(path, lines)
+	-- examples/ and non-plugin paths excluded by this guard
+	if not path:match("^src/plugins/") then
+		return {}, {}
+	end
+
+	if not lines then
+		lines = read_lines(path)
+		if not lines then
+			return {}, {}
+		end
+	end
+
+	local errors = {}
+	local warnings = {}
+
+	for i, line in ipairs(lines) do
+		local stripped = line:match("^%s*(.-)%s*$")
+
+		-- Skip blank lines and comment lines
+		if stripped ~= "" and not stripped:match("^%-%-") then
+			-- Check for alias assignments: local <name> = evolved.spawn or evolved.id
+			-- Flag ONLY the alias assignment line (not subsequent calls) to avoid false positives.
+			local alias_target = stripped:match("^local%s+[%a_][%w_]*%s*=%s*(evolved%.[%a_][%w_]*)")
+			if alias_target == "evolved.spawn" then
+				errors[#errors + 1] = {
+					line_num = i,
+					line = line,
+					kind = "alias",
+					message = "evolved.spawn() alias -- use worlds:spawn_server() or worlds:spawn_client()",
+				}
+			elseif alias_target == "evolved.id" then
+				errors[#errors + 1] = {
+					line_num = i,
+					line = line,
+					kind = "alias",
+					message = "evolved.id() alias -- use worlds:spawn_server() or worlds:spawn_client()",
+				}
+			end
+
+			-- Check for direct evolved.spawn() calls
+			if stripped:match("evolved%.spawn%s*%(") then
+				errors[#errors + 1] = {
+					line_num = i,
+					line = line,
+					kind = "direct",
+					message = "evolved.spawn() -- use worlds:spawn_server() or worlds:spawn_client()",
+				}
+			-- Check for direct evolved.id() calls (only if not already caught by alias check)
+			elseif stripped:match("evolved%.id%s*%(") then
+				errors[#errors + 1] = {
+					line_num = i,
+					line = line,
+					kind = "direct",
+					message = "evolved.id() -- use worlds:spawn_server() or worlds:spawn_client()",
+				}
+			end
+
+			-- Check for require("lib.evolved") — warning only, not error
+			if stripped:match("[\"']lib%.evolved[\"']") then
+				warnings[#warnings + 1] = {
+					line_num = i,
+					line = line,
+					kind = "require",
+					message = 'require("lib.evolved") in plugin -- consider using ctx.worlds for entity management',
+				}
+			end
+		end
+	end
+
+	return errors, warnings
+end
+
+-------------------------------------------------------------------------------
 -- Report formatting
 -------------------------------------------------------------------------------
 

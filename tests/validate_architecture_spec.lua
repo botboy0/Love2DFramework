@@ -270,6 +270,133 @@ describe("Validator.detect_missing_tests", function()
 end)
 
 -------------------------------------------------------------------------------
+-- detect_raw_ecs_calls
+-------------------------------------------------------------------------------
+
+describe("Validator.detect_raw_ecs_calls", function()
+	it("flags evolved.spawn() direct call as error", function()
+		local path = "src/plugins/foo/init.lua"
+		local lines = {
+			"local Plugin = {}",
+			"function Plugin:init(ctx)",
+			"  local e = evolved.spawn(ctx.world)",
+			"end",
+			"return Plugin",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.is_true(#errors >= 1, "Expected at least one error for evolved.spawn()")
+		assert.equals(0, #warnings, "Expected no warnings for evolved.spawn()")
+	end)
+
+	it("flags evolved.id() direct call as error", function()
+		local path = "src/plugins/foo/init.lua"
+		local lines = {
+			"local Plugin = {}",
+			"function Plugin:init(ctx)",
+			"  local frag = evolved.id()",
+			"end",
+			"return Plugin",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.is_true(#errors >= 1, "Expected at least one error for evolved.id()")
+		assert.equals(0, #warnings, "Expected no warnings for evolved.id()")
+	end)
+
+	it("flags evolved.spawn alias assignment as error", function()
+		local path = "src/plugins/foo/init.lua"
+		local lines = {
+			"local spawn = evolved.spawn",
+			"local Plugin = {}",
+			"return Plugin",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.is_true(#errors >= 1, "Expected at least one error for evolved.spawn alias")
+		assert.equals(0, #warnings, "Expected no warnings for alias assignment")
+	end)
+
+	it("flags evolved.id alias assignment as error", function()
+		local path = "src/plugins/foo/init.lua"
+		local lines = {
+			"local make_id = evolved.id",
+			"local Plugin = {}",
+			"return Plugin",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.is_true(#errors >= 1, "Expected at least one error for evolved.id alias")
+	end)
+
+	it("warns on require('lib.evolved') without error", function()
+		local path = "src/plugins/foo/init.lua"
+		local lines = {
+			"local evolved = require('lib.evolved')",
+			"local Plugin = {}",
+			"return Plugin",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.equals(0, #errors, "Expected no errors for require('lib.evolved')")
+		assert.is_true(#warnings >= 1, "Expected at least one warning for require('lib.evolved')")
+	end)
+
+	it("warns on require(\"lib.evolved\") (double quotes) without error", function()
+		local path = "src/plugins/bar/init.lua"
+		local lines = {
+			'local evolved = require("lib.evolved")',
+			"local Plugin = {}",
+			"return Plugin",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.equals(0, #errors, "Expected no errors for require(\"lib.evolved\")")
+		assert.is_true(#warnings >= 1, "Expected at least one warning for require(\"lib.evolved\")")
+	end)
+
+	it("ignores non-plugin paths (src/core/)", function()
+		local path = "src/core/bus.lua"
+		local lines = {
+			"local e = evolved.spawn(world)",
+			"local frag = evolved.id()",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.equals(0, #errors, "Non-plugin paths should be ignored")
+		assert.equals(0, #warnings, "Non-plugin paths should produce no warnings")
+	end)
+
+	it("ignores examples/ paths", function()
+		local path = "examples/canonical_plugin.lua"
+		local lines = {
+			"local e = evolved.spawn(world)",
+			"local evolved = require('lib.evolved')",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.equals(0, #errors, "examples/ paths should be excluded")
+		assert.equals(0, #warnings, "examples/ paths should produce no warnings")
+	end)
+
+	it("ignores comment lines", function()
+		local path = "src/plugins/foo/init.lua"
+		local lines = {
+			"-- local e = evolved.spawn(world)",
+			"-- local evolved = require('lib.evolved')",
+			"-- local spawn = evolved.spawn",
+			"local Plugin = {}",
+			"return Plugin",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.equals(0, #errors, "Comment lines should not be flagged")
+		assert.equals(0, #warnings, "Comment lines should not produce warnings")
+	end)
+
+	it("returns empty for non-plugin src path", function()
+		local path = "src/server/main.lua"
+		local lines = {
+			"local e = evolved.spawn(world)",
+		}
+		local errors, warnings = Validator.detect_raw_ecs_calls(path, lines)
+		assert.equals(0, #errors, "Non-plugin src paths should be ignored")
+		assert.equals(0, #warnings, "Non-plugin src paths should produce no warnings")
+	end)
+end)
+
+-------------------------------------------------------------------------------
 -- Validator.run integration smoke test
 -------------------------------------------------------------------------------
 
