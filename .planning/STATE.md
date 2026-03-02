@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T23:23:11.668Z"
+last_updated: "2026-03-02T00:16:10Z"
 progress:
-  total_phases: 1
+  total_phases: 7
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 8
+  completed_plans: 6
 ---
 
 # Project State
@@ -23,29 +23,29 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 2 of 7 (Plugin Infrastructure)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-03-02 — Completed 02-01 (ctx.config access in canonical plugin; harness dep enforcement proxy with strict/tolerant modes)
+Last activity: 2026-03-02 — Completed 02-02 (detect_raw_ecs_calls, error/warning split, verbose mode, dual Validator.run() return)
 
-Progress: [████░░░░░░] ~32%
+Progress: [█████░░░░░] ~36%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 6
 - Average duration: ~3 min/plan
-- Total execution time: ~8 min
+- Total execution time: ~11 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-core-infrastructure | 4 | ~11 min | ~2.75 min |
-| 02-plugin-infrastructure | 1 | ~5 min | ~5 min |
+| 02-plugin-infrastructure | 2 | ~8 min | ~4 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-02, 01-03, 01-04, 02-01
-- Trend: On track — Phase 2 started
+- Last 5 plans: 01-03, 01-04, 02-01, 02-02
+- Trend: On track — Phase 2 plan 2 complete
 
 *Updated after each plan completion*
 
@@ -77,6 +77,10 @@ Recent decisions affecting current work:
 - [02-01]: Harness proxy intercepts :get() only; register() and other methods delegate transparently to real services via __index
 - [02-01]: error_mode defaults to "strict" inline in harness — no shared resolve_error_mode (no third caller yet)
 - [02-01]: Proxy only installed when opts.allowed_deps provided — all existing harness callers unaffected
+- [02-02]: detect_raw_ecs_calls uses ^src/plugins/ path guard — examples/, src/core/, lib/ excluded naturally
+- [02-02]: Alias detection flags only the assignment line, not subsequent alias calls — avoids false positives with variable shadowing
+- [02-02]: Validator.run() now returns (error_count, warning_count) — breaking change from single total; integration test updated
+- [02-02]: format_verbose() stores _verbose_str on violation objects; print_section checks field before falling back to formatter
 
 ### Pending Todos
 
@@ -90,5 +94,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 02-01-PLAN.md — ctx.config access in canonical plugin; harness dep enforcement proxy (strict/tolerant modes); 7 new harness spec tests
+Stopped at: Completed 02-02-PLAN.md — raw ECS call detection (evolved.spawn/id), error/warning severity split, verbose mode with rule refs, dual Validator.run() return
 Resume file: None
