@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 Phase: 3 of 7 (Input Plugin)
 Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-03-02 — Completed 03-02 (Input plugin with baton, touch regions, service API, bus events)
+Last activity: 2026-03-02 - Completed quick task 1: Fix ROADMAP plugin:quit() → plugin:shutdown() naming
 
 Progress: [███████░░░] ~58%
 
@@ -96,6 +96,12 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 None yet.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 1 | Fix ROADMAP plugin:quit() → plugin:shutdown() naming | 2026-03-02 | f004fce | [1-fix-roadmap-plugin-quit-to-plugin-shutdo](./quick/1-fix-roadmap-plugin-quit-to-plugin-shutdo/) |
 
 ### Blockers/Concerns
 
