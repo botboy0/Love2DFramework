@@ -64,10 +64,11 @@ Plans:
   1. An action defined in the input config (e.g., `"jump"`) returns a pressed state regardless of whether the trigger is a keyboard key, gamepad button, or touch region
   2. The input plugin boots and shuts down via the standard `plugin:init(ctx)` / `plugin:quit()` lifecycle without special-casing in `main.lua`
   3. A test using the plugin harness can exercise input state without a physical device attached
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Registry update_all(dt) + vendor baton library (Wave 1)
+- [ ] 03-02-PLAN.md — Input plugin (init.lua, touch_regions.lua, main.lua wiring, plugin_list) (Wave 2)
 
 ### Phase 4: Asset Pipeline
 **Goal**: Assets load without frame hitches and draw calls are minimized by atlas packing — on mobile targets
