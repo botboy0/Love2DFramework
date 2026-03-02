@@ -545,3 +545,79 @@ describe("Validator.run", function()
 		assert.is_number(warns, "Second return value should be a number (warning_count)")
 	end)
 end)
+
+-------------------------------------------------------------------------------
+-- Validator.run with --fix flag
+-------------------------------------------------------------------------------
+
+describe("Validator.run with --fix", function()
+	-- Use a real src/ path so find_lua_files("src") picks it up,
+	-- and a corresponding tests/ path that must not exist before the test.
+	local src_file = "src/plugins/testfix/init.lua"
+	local expected_spec = "tests/plugins/testfix/init_spec.lua"
+
+	before_each(function()
+		-- Ensure no leftover from a previous run
+		os.remove(src_file)
+		os.remove(expected_spec)
+		os.execute('rm -rf "src/plugins/testfix"')
+		os.execute('rm -rf "tests/plugins/testfix"')
+	end)
+
+	after_each(function()
+		-- Clean up any files created during the test
+		os.remove(src_file)
+		os.remove(expected_spec)
+		os.execute('rm -rf "src/plugins/testfix"')
+		os.execute('rm -rf "tests/plugins/testfix"')
+	end)
+
+	it("creates a stub spec file for a src/ file with no matching test", function()
+		-- Create a minimal src/ file under a new plugin directory
+		os.execute('mkdir -p "src/plugins/testfix"')
+		local f = io.open(src_file, "w")
+		assert(f, "Could not create test src fixture: " .. src_file)
+		f:write("-- testfix stub src\nlocal M = {}\nM.deps = {}\nreturn M\n")
+		f:close()
+
+		-- Verify the spec does not exist yet
+		local before = io.open(expected_spec, "r")
+		assert.is_nil(before, "Spec file should not exist before --fix run")
+
+		-- Run validator with fix=true (silent suppresses output noise in test runs)
+		Validator.run({ fix = true, silent = true })
+
+		-- Verify the stub spec was created
+		local after = io.open(expected_spec, "r")
+		assert.is_not_nil(after, "Stub spec file should have been created by --fix")
+		if after then
+			local content = after:read("*a")
+			after:close()
+			assert.is_truthy(content:match('describe%("init"'), 'Stub should contain describe("init"...) block')
+			assert.is_truthy(content:match('pending%("TODO: add tests"%)'), "Stub should contain pending placeholder")
+		end
+	end)
+
+	it("reduces error count to zero after fixing all missing tests", function()
+		-- Create a src/ file without a test mirror
+		os.execute('mkdir -p "src/plugins/testfix"')
+		local f = io.open(src_file, "w")
+		assert(f, "Could not create test src fixture: " .. src_file)
+		f:write("-- testfix stub src\nlocal M = {}\nM.deps = {}\nreturn M\n")
+		f:close()
+
+		-- Before fix: the file should show up as a violation
+		local errs_before = Validator.detect_missing_tests({ src_file })
+		assert.is_true(#errs_before >= 1, "Should detect missing test before --fix")
+
+		-- Run with fix=true
+		local errs_after, _ = Validator.run({ fix = true, silent = true })
+
+		-- After fix: the newly created stub reduces missing-test violations for this file
+		local remaining = Validator.detect_missing_tests({ src_file })
+		assert.equals(0, #remaining, "Missing test should be resolved after --fix creates stub")
+
+		-- Overall error count should remain 0 (project clean + stub created)
+		assert.equals(0, errs_after, "Overall error count should be 0 after --fix on otherwise clean project")
+	end)
+end)
