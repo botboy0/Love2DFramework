@@ -72,7 +72,7 @@ end
 --- Returns fixed load_requests and groups.
 local function make_manifest_stub(load_requests, groups)
 	return {
-		parse = function(_self, _manifest_table)
+		parse = function(_manifest_table)
 			return load_requests, groups
 		end,
 	}
@@ -161,7 +161,7 @@ describe("AssetPlugin", function()
 
 			local parse_calls = {}
 			local manifest_stub = {
-				parse = function(_self, tbl)
+				parse = function(tbl)
 					table.insert(parse_calls, tbl)
 					return {}, {}
 				end,
@@ -436,6 +436,8 @@ describe("AssetPlugin", function()
 			end)
 
 			fire_batch_complete(ctx)
+			AssetPlugin:update(0)
+			ctx.bus:flush()
 
 			assert.is_true(svc.is_ready(), "should be ready after batch_complete")
 			assert.are.equal(1, #ready_events, "asset:ready should be emitted once")

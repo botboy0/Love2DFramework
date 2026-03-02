@@ -534,13 +534,13 @@ describe("Validator.run", function()
 		-- - No plugins exist yet (no cross-plugin import violations)
 		-- - No undeclared globals in src/ files
 		-- Validator.run now returns (error_count, warning_count)
-		local errs, warns = Validator.run({ silent = true })
+		local errs, warns = Validator.run({ log = function() end })
 		assert.equals(0, errs, "Clean project should have zero errors")
 		assert.is_not_nil(warns, "run() should return a second value (warning_count)")
 	end)
 
 	it("returns warning_count as second return value", function()
-		local errs, warns = Validator.run({ silent = true })
+		local errs, warns = Validator.run({ log = function() end })
 		assert.is_number(errs, "First return value should be a number (error_count)")
 		assert.is_number(warns, "Second return value should be a number (warning_count)")
 	end)
@@ -585,7 +585,7 @@ describe("Validator.run with --fix", function()
 		assert.is_nil(before, "Spec file should not exist before --fix run")
 
 		-- Run validator with fix=true (silent suppresses output noise in test runs)
-		Validator.run({ fix = true, silent = true })
+		Validator.run({ fix = true, log = function() end })
 
 		-- Verify the stub spec was created
 		local after = io.open(expected_spec, "r")
@@ -611,7 +611,7 @@ describe("Validator.run with --fix", function()
 		assert.is_true(#errs_before >= 1, "Should detect missing test before --fix")
 
 		-- Run with fix=true
-		local errs_after, _ = Validator.run({ fix = true, silent = true })
+		local errs_after, _ = Validator.run({ fix = true, log = function() end })
 
 		-- After fix: the newly created stub reduces missing-test violations for this file
 		local remaining = Validator.detect_missing_tests({ src_file })
