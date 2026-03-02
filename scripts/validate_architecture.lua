@@ -752,6 +752,52 @@ function Validator.run(opts)
 	error_count = error_count + #ecs_errors
 	warning_count = warning_count + #ecs_warnings
 
+	-- 6. Undeclared service dependencies in plugin directories
+	-- Collect unique plugin directories from plugin_files
+	local plugin_dirs_seen = {}
+	local plugin_dirs = {}
+	for _, f in ipairs(plugin_files) do
+		local plugin_dir = f:match("^(src/plugins/[^/]+)")
+		if plugin_dir and not plugin_dirs_seen[plugin_dir] then
+			plugin_dirs_seen[plugin_dir] = true
+			plugin_dirs[#plugin_dirs + 1] = plugin_dir
+		end
+	end
+
+	local svc_errors = {}
+	local svc_dep_parse_errors = {}
+	for _, plugin_dir in ipairs(plugin_dirs) do
+		local errs, dep_errs = Validator.detect_undeclared_service_deps(plugin_dir)
+		for _, e in ipairs(errs) do
+			if verbose then
+				local file_lines = read_lines(e.file)
+				if file_lines then
+					e._verbose_str = format_verbose(
+						e.file,
+						e.line_num,
+						file_lines,
+						e.message,
+						'CLAUDE.md SS4 -- "No plugin may access another plugin\'s internals"'
+					)
+				end
+			end
+			svc_errors[#svc_errors + 1] = e
+		end
+		for _, de in ipairs(dep_errs) do
+			de.plugin_dir = plugin_dir
+			svc_dep_parse_errors[#svc_dep_parse_errors + 1] = de
+		end
+	end
+
+	print_section("Undeclared Service Dependencies", svc_errors, function(v)
+		return v.file .. ":" .. v.line_num .. ": " .. v.message
+	end, verbose)
+	print_section("Missing deps Declaration", svc_dep_parse_errors, function(v)
+		return (v.plugin_dir or "?") .. ": " .. v.message
+	end, verbose)
+	error_count = error_count + #svc_errors
+	error_count = error_count + #svc_dep_parse_errors
+
 	return error_count, warning_count
 end
 
