@@ -397,6 +397,133 @@ describe("Validator.detect_raw_ecs_calls", function()
 end)
 
 -------------------------------------------------------------------------------
+-- detect_undeclared_service_deps (Task 1 RED tests)
+-------------------------------------------------------------------------------
+
+describe("Validator.detect_undeclared_service_deps", function()
+	local tmp_svc = "/tmp/arch_test_svc"
+
+	before_each(function()
+		remove_dir(tmp_svc)
+	end)
+
+	after_each(function()
+		remove_dir(tmp_svc)
+	end)
+
+	--- Helper: create the plugin dir structure and return the plugin dir path.
+	local function make_plugin(init_content, extra_files)
+		local plugin_dir = tmp_svc .. "/src/plugins/testplugin"
+		os.execute('mkdir -p "' .. plugin_dir .. '"')
+		write_temp("init.lua", init_content, plugin_dir)
+		if extra_files then
+			for rel_path, content in pairs(extra_files) do
+				-- rel_path is relative to plugin_dir, e.g. "systems/move.lua"
+				local sub = plugin_dir .. "/" .. rel_path:match("^(.+)/[^/]+$")
+				if sub then
+					os.execute('mkdir -p "' .. sub .. '"')
+				end
+				local full = plugin_dir .. "/" .. rel_path
+				local f = io.open(full, "w")
+				assert(f, "Could not write: " .. full)
+				f:write(content)
+				f:close()
+			end
+		end
+		return plugin_dir
+	end
+
+	it("detects undeclared services:get() call", function()
+		local plugin_dir = make_plugin(
+			"local MyPlugin = {}\nMyPlugin.deps = { 'inventory' }\nreturn MyPlugin\n",
+			{ ["systems/harvest.lua"] = "local s = ctx.services:get('crafting')\n" }
+		)
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.is_not_nil(errors, "Should return errors table")
+		assert.is_not_nil(dep_parse_errors, "Should return dep_parse_errors table")
+		assert.equals(0, #dep_parse_errors, "Should have no dep parse errors")
+		assert.is_true(#errors >= 1, "Should have at least one error for undeclared 'crafting'")
+		local found = false
+		for _, e in ipairs(errors) do
+			if e.service == "crafting" then
+				found = true
+			end
+		end
+		assert.is_true(found, "Error should reference undeclared service 'crafting'")
+	end)
+
+	it("allows declared services:get() call", function()
+		local plugin_dir = make_plugin(
+			"local MyPlugin = {}\nMyPlugin.deps = { 'inventory' }\nreturn MyPlugin\n",
+			{ ["systems/harvest.lua"] = "local s = ctx.services:get('inventory')\n" }
+		)
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.equals(0, #dep_parse_errors, "Should have no dep parse errors")
+		assert.equals(0, #errors, "Declared dep 'inventory' should not produce an error")
+	end)
+
+	it("flags missing deps declaration", function()
+		local plugin_dir = make_plugin("local MyPlugin = {}\nreturn MyPlugin\n")
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.is_true(#dep_parse_errors >= 1, "Should have dep parse error for missing declaration")
+	end)
+
+	it("parses empty deps correctly and flags services:get() call", function()
+		local plugin_dir = make_plugin(
+			"local MyPlugin = {}\nMyPlugin.deps = {}\nreturn MyPlugin\n",
+			{ ["systems/foo.lua"] = "local x = services:get('foo')\n" }
+		)
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.equals(0, #dep_parse_errors, "Empty deps should parse cleanly")
+		assert.is_true(#errors >= 1, "services:get('foo') should be flagged when deps is empty")
+	end)
+
+	it("scans all files under plugin directory, not just init.lua", function()
+		local plugin_dir = make_plugin(
+			"local MyPlugin = {}\nMyPlugin.deps = {}\nreturn MyPlugin\n",
+			{ ["systems/movement_system.lua"] = "local x = ctx.services:get('undeclared')\n" }
+		)
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.equals(0, #dep_parse_errors, "Should have no dep parse errors")
+		assert.is_true(#errors >= 1, "Should detect services:get in subdirectory file")
+		local found = false
+		for _, e in ipairs(errors) do
+			if e.service == "undeclared" then
+				found = true
+			end
+		end
+		assert.is_true(found, "Error should reference 'undeclared' service")
+	end)
+
+	it("handles both single and double quote styles", function()
+		local plugin_dir = make_plugin(
+			"local MyPlugin = {}\nMyPlugin.deps = {}\nreturn MyPlugin\n",
+			{
+				["systems/a.lua"] = "local x = services:get('foo')\n",
+				["systems/b.lua"] = 'local y = services:get("bar")\n',
+			}
+		)
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.equals(0, #dep_parse_errors, "Should have no dep parse errors")
+		assert.is_true(#errors >= 2, "Both quote styles should be detected")
+		local names = {}
+		for _, e in ipairs(errors) do
+			names[e.service] = true
+		end
+		assert.is_true(names["foo"], "Single-quoted service should be detected")
+		assert.is_true(names["bar"], "Double-quoted service should be detected")
+	end)
+
+	it("returns dep_parse_error when init.lua is missing", function()
+		local plugin_dir = tmp_svc .. "/src/plugins/noinit"
+		os.execute('mkdir -p "' .. plugin_dir .. '"')
+		local errors, dep_parse_errors = Validator.detect_undeclared_service_deps(plugin_dir)
+		assert.is_not_nil(dep_parse_errors, "Should return dep_parse_errors table")
+		assert.is_true(#dep_parse_errors >= 1, "Missing init.lua should produce a dep parse error")
+	end)
+end)
+
+-------------------------------------------------------------------------------
 -- Validator.run integration smoke test
 -------------------------------------------------------------------------------
 

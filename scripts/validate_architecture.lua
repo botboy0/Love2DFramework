@@ -451,6 +451,94 @@ function Validator.detect_raw_ecs_calls(path, lines)
 end
 
 -------------------------------------------------------------------------------
+-- Detection: undeclared service dependencies
+-------------------------------------------------------------------------------
+
+--- Parse the deps declaration from a plugin's init.lua lines.
+--- Looks for a single-line declaration: MyPlugin.deps = { 'dep1', 'dep2' }
+--- Returns an array of declared dep names, or nil if no declaration found.
+---
+--- @param lines string[]  Lines from the plugin's init.lua
+--- @return string[]|nil  Array of declared dep names, or nil if not parseable
+local function parse_declared_deps(lines)
+	for _, line in ipairs(lines) do
+		-- Match: SomeName.deps = { ... }  (single-line, greedy-safe)
+		local body = line:match("^%s*[%a_][%w_]*%.deps%s*=%s*{(.-)}")
+		if body ~= nil then
+			-- body found — even empty string means "empty deps" (return {})
+			local deps = {}
+			for name in body:gmatch("[\"']([%a_][%w_]*)[\"']") do
+				deps[#deps + 1] = name
+			end
+			return deps
+		end
+	end
+	return nil
+end
+
+--- Detect services:get() calls in plugin files that reference services not declared in deps.
+---
+--- Reads init.lua in plugin_dir to parse the deps declaration, then scans ALL .lua files
+--- under plugin_dir for services:get("X") calls where X is not in the declared deps.
+---
+--- @param plugin_dir string  Path to plugin directory (e.g. "src/plugins/movement")
+--- @return table[], table[]  errors, dep_parse_errors
+---   errors:           { file, line_num, line, service, message }
+---   dep_parse_errors: { message } — structural problems with the deps declaration
+function Validator.detect_undeclared_service_deps(plugin_dir)
+	local errors = {}
+	local dep_parse_errors = {}
+
+	-- Read init.lua
+	local init_path = plugin_dir .. "/init.lua"
+	local init_lines = read_lines(init_path)
+	if not init_lines then
+		dep_parse_errors[#dep_parse_errors + 1] = {
+			message = "init.lua not found -- cannot parse deps",
+		}
+		return errors, dep_parse_errors
+	end
+
+	-- Parse declared deps
+	local declared_deps = parse_declared_deps(init_lines)
+	if declared_deps == nil then
+		dep_parse_errors[#dep_parse_errors + 1] = {
+			message = "No parseable 'Module.deps = { ... }' declaration found -- deps must be on a single line",
+		}
+		return errors, dep_parse_errors
+	end
+
+	-- Build allowed lookup set
+	local allowed = {}
+	for _, dep in ipairs(declared_deps) do
+		allowed[dep] = true
+	end
+
+	-- Scan all .lua files under plugin_dir for services:get() calls
+	local plugin_files = find_lua_files(plugin_dir)
+	for _, path in ipairs(plugin_files) do
+		local lines = read_lines(path)
+		if lines then
+			for i, line in ipairs(lines) do
+				-- Match services:get("X") or services:get('X') — case-insensitive on "services"
+				local svc_name = line:match("[sS]ervices%s*:%s*get%s*%(%s*[\"']([%a_][%w_]*)[\"']")
+				if svc_name and not allowed[svc_name] then
+					errors[#errors + 1] = {
+						file = path,
+						line_num = i,
+						line = line,
+						service = svc_name,
+						message = "services:get('" .. svc_name .. "') -- not declared in deps",
+					}
+				end
+			end
+		end
+	end
+
+	return errors, dep_parse_errors
+end
+
+-------------------------------------------------------------------------------
 -- Report formatting
 -------------------------------------------------------------------------------
 
