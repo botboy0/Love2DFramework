@@ -30,8 +30,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Input
 
-- [ ] **INPT-01**: Unified input plugin wrapping baton for keyboard, gamepad, and touch
-- [ ] **INPT-02**: Action-based input mapping abstracted from hardware devices
+- [x] **INPT-01**: Unified input plugin wrapping baton for keyboard, gamepad, and touch
+- [x] **INPT-02**: Action-based input mapping abstracted from hardware devices
 - [x] **INPT-03**: Input plugin registered as standard framework plugin via `plugin:init(ctx)`
 
 ### Asset Pipeline
@@ -113,8 +113,8 @@ Deferred to future release.
 | PLUG-03 | Phase 2 | Complete |
 | PLUG-04 | Phase 2 | Complete |
 | PLUG-05 | Phase 2 | Complete |
-| INPT-01 | Phase 3 | Pending |
-| INPT-02 | Phase 3 | Pending |
+| INPT-01 | Phase 3 | Complete |
+| INPT-02 | Phase 3 | Complete |
 | INPT-03 | Phase 3 | Complete |
 | ASST-01 | Phase 4 | Pending |
 | ASST-02 | Phase 4 | Pending |

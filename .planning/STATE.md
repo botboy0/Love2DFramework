@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-02T00:25:50.357Z"
+last_updated: "2026-03-02T01:29:00.000Z"
 progress:
-  total_phases: 2
+  total_phases: 7
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 10
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,18 +23,18 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 3 of 7 (Input Plugin)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-03-02 — Completed 03-01 (Registry:update_all(dt), baton vendored)
+Last activity: 2026-03-02 — Completed 03-02 (Input plugin with baton, touch regions, service API, bus events)
 
-Progress: [██████░░░░] ~50%
+Progress: [███████░░░] ~58%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: ~3 min/plan
-- Total execution time: ~11 min
+- Total plans completed: 8
+- Average duration: ~4 min/plan
+- Total execution time: ~30 min
 
 **By Phase:**
 
@@ -42,10 +42,11 @@ Progress: [██████░░░░] ~50%
 |-------|-------|-------|----------|
 | 01-core-infrastructure | 4 | ~11 min | ~2.75 min |
 | 02-plugin-infrastructure | 3 | ~13 min | ~4.3 min |
+| 03-input-plugin (partial) | 2 | ~10 min | ~5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04, 02-01, 02-02, 02-03
-- Trend: On track — Phase 2 plan 3 complete
+- Last 5 plans: 02-02, 02-03, 03-01, 03-02
+- Trend: On track — Phase 3 plan 2 complete
 
 *Updated after each plan completion*
 
@@ -87,6 +88,10 @@ Recent decisions affecting current work:
 - [03-01]: update_all follows exact tolerant/strict pcall pattern from boot() — symmetry makes the code predictable
 - [03-01]: Pre-boot update_all() is safe no-op — empty _boot_order means zero iterations, no guard branch needed
 - [03-01]: main.lua ordering: update_all(dt) -> receive_all -> bus:flush -> transport:flush — plugin updates emit events flushed same frame
+- [03-02]: Service functions are plain functions (not :methods) — callers use svc.is_down("jump") without colon
+- [03-02]: touch_regions.lua uses _get_dimensions() injection for test isolation (no love.graphics in tests)
+- [03-02]: .busted lpath = './?/init.lua' added to enable require('src.plugins.X') finding plugin init.lua files
+- [03-02]: love.touch nil-guarded in get_touch_points — love global may not exist in test environment
 
 ### Pending Todos
 
@@ -100,5 +105,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 03-01-PLAN.md — Registry:update_all(dt), baton vendored at lib/baton.lua
+Stopped at: Completed 03-02-PLAN.md — Input plugin with baton, touch regions, service API, bus events, main.lua wiring
 Resume file: None
