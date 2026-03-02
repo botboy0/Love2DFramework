@@ -52,7 +52,7 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 02-01-PLAN.md — Canonical plugin config usage + harness dep enforcement proxy (Wave 1)
+- [x] 02-01-PLAN.md — Canonical plugin config usage + harness dep enforcement proxy (Wave 1)
 - [ ] 02-02-PLAN.md — Validator raw ECS call detection + verbose flag + error/warning separation (Wave 1)
 - [ ] 02-03-PLAN.md — Validator undeclared service dependency cross-reference (Wave 2)
 
@@ -129,7 +129,7 @@ Note: Phase 6 (Developer Tools) depends only on Phase 1 and Phase 7 (Documentati
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Infrastructure | 4/4 | Complete | 2026-03-02 |
-| 2. Plugin Infrastructure | 0/3 | Not started | - |
+| 2. Plugin Infrastructure | 1/3 | In progress | - |
 | 3. Input Plugin | 0/? | Not started | - |
 | 4. Asset Pipeline | 0/? | Not started | - |
 | 5. Collision Plugin | 0/? | Not started | - |

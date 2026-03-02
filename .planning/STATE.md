@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** A framework that enforces clean architecture by default — ECS-only game logic, event-bus-only communication, isolated plugins — so games stay maintainable as they grow.
-**Current focus:** Phase 1 — Core Infrastructure
+**Current focus:** Phase 2 — Plugin Infrastructure
 
 ## Current Position
 
-Phase: 1 of 7 (Core Infrastructure)
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-03-02 — Completed 01-04 (main.lua integration: love.quit, transport flush ordering, canonical plugin single-world mode)
+Phase: 2 of 7 (Plugin Infrastructure)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-03-02 — Completed 02-01 (ctx.config access in canonical plugin; harness dep enforcement proxy with strict/tolerant modes)
 
-Progress: [████░░░░░░] ~28%
+Progress: [████░░░░░░] ~32%
 
 ## Performance Metrics
 
@@ -41,10 +41,11 @@ Progress: [████░░░░░░] ~28%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-core-infrastructure | 4 | ~11 min | ~2.75 min |
+| 02-plugin-infrastructure | 1 | ~5 min | ~5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-02, 01-03, 01-04
-- Trend: On track — Phase 1 complete
+- Last 5 plans: 01-01, 01-02, 01-03, 01-04, 02-01
+- Trend: On track — Phase 2 started
 
 *Updated after each plan completion*
 
@@ -73,6 +74,9 @@ Recent decisions affecting current work:
 - [01-04]: Transport flush ordering: receive_all (inbound->bus queue) before bus:flush before transport:flush (outbound)
 - [01-04]: _config local in main.lua — games override here or in conf.lua; not loaded from file
 - [01-04]: canonical_plugin.lua uses local fragments; single-world compatibility via if ctx.worlds.server duck-type check
+- [02-01]: Harness proxy intercepts :get() only; register() and other methods delegate transparently to real services via __index
+- [02-01]: error_mode defaults to "strict" inline in harness — no shared resolve_error_mode (no third caller yet)
+- [02-01]: Proxy only installed when opts.allowed_deps provided — all existing harness callers unaffected
 
 ### Pending Todos
 
@@ -86,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 01-04-PLAN.md — main.lua integration (love.quit, transport flush, config threading, canonical plugin single-world); Phase 1 complete
+Stopped at: Completed 02-01-PLAN.md — ctx.config access in canonical plugin; harness dep enforcement proxy (strict/tolerant modes); 7 new harness spec tests
 Resume file: None

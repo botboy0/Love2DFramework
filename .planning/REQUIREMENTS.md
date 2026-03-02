@@ -22,8 +22,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Plugin Infrastructure
 
-- [ ] **PLUG-01**: Plugin isolation test harness provides minimal ctx with declared dependencies only
-- [ ] **PLUG-02**: Canonical plugin example demonstrates component registration, system registration, and event handling
+- [x] **PLUG-01**: Plugin isolation test harness provides minimal ctx with declared dependencies only
+- [x] **PLUG-02**: Canonical plugin example demonstrates component registration, system registration, and event handling
 - [ ] **PLUG-03**: Architecture validator flags raw `evolved.spawn()` calls in plugin files
 - [ ] **PLUG-04**: Architecture validator flags `evolved.id()` calls in plugin files
 - [ ] **PLUG-05**: Architecture validator cross-references `ctx.services:get()` against declared plugin deps
@@ -108,8 +108,8 @@ Deferred to future release.
 | CORE-08 | Phase 1 | Complete |
 | CORE-09 | Phase 1 | Complete |
 | CORE-10 | Phase 1 | Complete |
-| PLUG-01 | Phase 2 | Pending |
-| PLUG-02 | Phase 2 | Pending |
+| PLUG-01 | Phase 2 | Complete |
+| PLUG-02 | Phase 2 | Complete |
 | PLUG-03 | Phase 2 | Pending |
 | PLUG-04 | Phase 2 | Pending |
 | PLUG-05 | Phase 2 | Pending |
@@ -135,4 +135,4 @@ Deferred to future release.
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-02 after 01-04 completion — CORE-01, CORE-02, CORE-07, CORE-10 marked complete; Phase 1 all 10 CORE requirements complete*
+*Last updated: 2026-03-02 after 02-01 completion — PLUG-01, PLUG-02 marked complete*
