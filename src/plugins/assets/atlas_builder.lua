@@ -164,7 +164,10 @@ function AtlasBuilder:_pack_atlas(name, keys, loaded_images)
 	-- Bake (pack) the atlas
 	atlas:bake("area")
 
-	-- Retrieve the canvas (try public method first, fall back to _canvas field)
+	-- Retrieve the canvas (try public method first, fall back to _canvas field).
+	-- RuntimeTextureAtlas exposes getCanvas() in newer versions; older versions
+	-- only store the canvas as the private _canvas field. This fallback ensures
+	-- compatibility across TA versions. If TA ever renames _canvas, update here.
 	local canvas
 	if atlas.getCanvas then
 		canvas = atlas:getCanvas()
