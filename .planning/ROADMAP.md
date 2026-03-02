@@ -49,10 +49,12 @@ Plans:
   2. A test using `tests/helpers/plugin_harness.lua` that accesses an undeclared service dependency fails with a clear error message
   3. Running the architecture validator on a plugin file containing `evolved.spawn(` or `evolved.id(` produces a CI failure with the offending line identified
   4. The architecture validator flags a `ctx.services:get("X")` call that is not listed in the plugin's declared `deps`
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Canonical plugin config usage + harness dep enforcement proxy (Wave 1)
+- [ ] 02-02-PLAN.md — Validator raw ECS call detection + verbose flag + error/warning separation (Wave 1)
+- [ ] 02-03-PLAN.md — Validator undeclared service dependency cross-reference (Wave 2)
 
 ### Phase 3: Input Plugin
 **Goal**: Game code can query player input actions without knowing whether the source is keyboard, gamepad, or touch
@@ -121,13 +123,13 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 Note: Phase 6 (Developer Tools) depends only on Phase 1 and Phase 7 (Documentation) depends only on Phase 2 — both can begin as soon as their dependencies are met without waiting for all prior phases.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Infrastructure | 4/4 | Complete | 2026-03-02 |
-| 2. Plugin Infrastructure | 0/? | Not started | - |
+| 2. Plugin Infrastructure | 0/3 | Not started | - |
 | 3. Input Plugin | 0/? | Not started | - |
 | 4. Asset Pipeline | 0/? | Not started | - |
 | 5. Collision Plugin | 0/? | Not started | - |
