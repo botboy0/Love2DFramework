@@ -18,4 +18,9 @@ return {
 		module = "src.plugins.input",
 		deps = {},
 	},
+	{
+		name = "assets",
+		module = "src.plugins.assets",
+		deps = {},
+	},
 }

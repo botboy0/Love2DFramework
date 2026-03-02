@@ -10,10 +10,20 @@ describe("plugin_list", function()
 		assert.is_table(plugin_list)
 	end)
 
-	it("contains the input plugin", function()
+	it("contains the input plugin as the first entry", function()
 		-- Phase 3 added the input plugin as the first boot manifest entry.
-		assert.are.equal(1, #plugin_list)
 		assert.are.equal("input", plugin_list[1].name)
+	end)
+
+	it("contains the assets plugin as the second entry", function()
+		-- Phase 4 added the assets plugin after the input plugin.
+		assert.are.equal("assets", plugin_list[2].name)
+		assert.are.equal("src.plugins.assets", plugin_list[2].module)
+		assert.are.same({}, plugin_list[2].deps)
+	end)
+
+	it("has two entries total (input + assets)", function()
+		assert.are.equal(2, #plugin_list)
 	end)
 
 	it("each entry has required fields when populated", function()

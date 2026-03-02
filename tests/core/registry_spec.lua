@@ -604,9 +604,14 @@ describe("plugin_list", function()
 		assert.is_table(list)
 	end)
 
-	it("contains the input plugin (Phase 3+)", function()
+	it("contains the input plugin as first entry (Phase 3+)", function()
 		local list = require("src.core.plugin_list")
-		assert.are.equal(1, #list)
 		assert.are.equal("input", list[1].name)
+	end)
+
+	it("has the expected number of plugin entries (Phase 4+)", function()
+		local list = require("src.core.plugin_list")
+		-- Phase 4 added the assets plugin: input + assets = 2
+		assert.are.equal(2, #list)
 	end)
 end)
