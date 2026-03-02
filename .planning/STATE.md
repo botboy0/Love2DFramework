@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 4 of 7 (Asset Pipeline)
-Plan: 3 of 4 in current phase (04-03 complete)
-Status: In progress
-Last activity: 2026-03-02 - Completed 04-03: Asset plugin init.lua with load-then-pack pipeline and boot manifest registration
+Plan: 4 of 4 in current phase (04-04 complete)
+Status: Phase 4 complete
+Last activity: 2026-03-02 - Completed 04-04: Silenced busted stdout noise (harness print stub, Bus log suppressor, Validator silent mode)
 
-Progress: [████████░░] ~70%
+Progress: [█████████░] ~80%
 
 ## Performance Metrics
 
@@ -105,6 +105,9 @@ Recent decisions affecting current work:
 - [04-03]: asset:ready deferred to update() — batch_complete handler fires during flush(), direct emit discarded by bus re-entrancy guard
 - [04-03]: DI via second opts arg to init() for test isolation — same pattern as touch_regions.lua _get_dimensions injection
 - [04-03]: block_depth replaces function_depth in validator detect_globals — counts ALL block-opening keywords (function, if, for, while, repeat, do) to avoid false positives from nested block ends
+- [04-04]: print stub uses _G.print save/restore (not spy) in tolerant-mode harness spec — simpler, busted-agnostic
+- [04-04]: log() local helper in Validator.run() + if not silent guards at all call sites — preserves print_section/print_warning_section signatures unchanged
+- [04-04]: Script entry-point prints left unsuppressed — CLI output vs library output separation is intentional
 
 ### Pending Todos
 
@@ -125,5 +128,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 04-03-PLAN.md — Asset plugin init.lua with load-then-pack pipeline
+Stopped at: Completed 04-04-PLAN.md — Stdout noise closure (print stub, Bus log suppressor, Validator silent mode)
 Resume file: None
