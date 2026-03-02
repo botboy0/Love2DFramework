@@ -670,6 +670,13 @@ function Validator.run(opts)
 	local error_count = 0
 	local warning_count = 0
 	local verbose = opts.verbose or false
+	local silent = opts.silent or false
+
+	local function log(...)
+		if not silent then
+			print(...)
+		end
+	end
 
 	-- Collect src/ files
 	local src_files = find_lua_files("src")
@@ -701,9 +708,11 @@ function Validator.run(opts)
 			global_violations[#global_violations + 1] = violation
 		end
 	end
-	print_section("Undeclared Globals", global_violations, function(v)
-		return v.file .. ":" .. v.line_num .. ": global `" .. v.name .. "`"
-	end, verbose)
+	if not silent then
+		print_section("Undeclared Globals", global_violations, function(v)
+			return v.file .. ":" .. v.line_num .. ": global `" .. v.name .. "`"
+		end, verbose)
+	end
 	error_count = error_count + #global_violations
 
 	-- 2. Cross-plugin imports
@@ -725,9 +734,11 @@ function Validator.run(opts)
 			import_violations[#import_violations + 1] = violation
 		end
 	end
-	print_section("Cross-Plugin Imports", import_violations, function(v)
-		return v.file .. ":" .. v.line_num .. ": plugin `" .. v.from_plugin .. "` imports `" .. v.to_plugin .. "`"
-	end, verbose)
+	if not silent then
+		print_section("Cross-Plugin Imports", import_violations, function(v)
+			return v.file .. ":" .. v.line_num .. ": plugin `" .. v.from_plugin .. "` imports `" .. v.to_plugin .. "`"
+		end, verbose)
+	end
 	error_count = error_count + #import_violations
 
 	-- 3. Game logic outside ECS systems
@@ -749,9 +760,11 @@ function Validator.run(opts)
 			logic_violations[#logic_violations + 1] = violation
 		end
 	end
-	print_section("Game Logic Outside ECS", logic_violations, function(v)
-		return v.file .. ":" .. v.line_num .. ": " .. v.reason
-	end, verbose)
+	if not silent then
+		print_section("Game Logic Outside ECS", logic_violations, function(v)
+			return v.file .. ":" .. v.line_num .. ": " .. v.reason
+		end, verbose)
+	end
 	error_count = error_count + #logic_violations
 
 	-- 4. Missing test files
@@ -767,15 +780,17 @@ function Validator.run(opts)
 			end
 		end
 		if fixed > 0 then
-			print("Fixed: created " .. fixed .. " missing test file(s)")
+			log("Fixed: created " .. fixed .. " missing test file(s)")
 		end
 		-- Re-detect after fix to get accurate remaining count
 		missing_tests = Validator.detect_missing_tests(src_files)
 	end
 
-	print_section("Missing Test Files", missing_tests, function(v)
-		return v.src_file .. " -> missing " .. v.expected_test
-	end, verbose)
+	if not silent then
+		print_section("Missing Test Files", missing_tests, function(v)
+			return v.src_file .. " -> missing " .. v.expected_test
+		end, verbose)
+	end
 	error_count = error_count + #missing_tests
 
 	-- 5. Raw ECS calls in plugin files
@@ -811,12 +826,14 @@ function Validator.run(opts)
 			ecs_warnings[#ecs_warnings + 1] = w
 		end
 	end
-	print_section("Raw ECS Calls", ecs_errors, function(v)
-		return v.file .. ":" .. v.line_num .. ": " .. v.message
-	end, verbose)
-	print_warning_section("ECS Require Warnings", ecs_warnings, function(v)
-		return v.file .. ":" .. v.line_num .. ": " .. v.message
-	end, verbose)
+	if not silent then
+		print_section("Raw ECS Calls", ecs_errors, function(v)
+			return v.file .. ":" .. v.line_num .. ": " .. v.message
+		end, verbose)
+		print_warning_section("ECS Require Warnings", ecs_warnings, function(v)
+			return v.file .. ":" .. v.line_num .. ": " .. v.message
+		end, verbose)
+	end
 	error_count = error_count + #ecs_errors
 	warning_count = warning_count + #ecs_warnings
 
@@ -857,12 +874,14 @@ function Validator.run(opts)
 		end
 	end
 
-	print_section("Undeclared Service Dependencies", svc_errors, function(v)
-		return v.file .. ":" .. v.line_num .. ": " .. v.message
-	end, verbose)
-	print_section("Missing deps Declaration", svc_dep_parse_errors, function(v)
-		return (v.plugin_dir or "?") .. ": " .. v.message
-	end, verbose)
+	if not silent then
+		print_section("Undeclared Service Dependencies", svc_errors, function(v)
+			return v.file .. ":" .. v.line_num .. ": " .. v.message
+		end, verbose)
+		print_section("Missing deps Declaration", svc_dep_parse_errors, function(v)
+			return (v.plugin_dir or "?") .. ": " .. v.message
+		end, verbose)
+	end
 	error_count = error_count + #svc_errors
 	error_count = error_count + #svc_dep_parse_errors
 
