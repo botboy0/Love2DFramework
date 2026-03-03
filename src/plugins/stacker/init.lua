@@ -190,7 +190,7 @@ function StackerPlugin:draw()
 		local rows = chunk:components(C.MovingRow)
 		for i = 1, count do
 			local m = rows[i]
-			love.graphics.setColor(1, 1, 1, 0.9)
+			love.graphics.setColor(BLOCK_COLOR[1], BLOCK_COLOR[2], BLOCK_COLOR[3], 0.9)
 			for c = 0, m.width - 1 do
 				local px = GRID_X + (m.col + c) * CELL_SIZE
 				local py = GRID_Y + m.row * CELL_SIZE
@@ -209,8 +209,13 @@ function StackerPlugin:draw()
 			local s = states[i]
 			love.graphics.printf("Score: " .. tostring(s.score), 0, GRID_Y - CELL_SIZE * 2, SCREEN_W, "center")
 			if not s.active then
-				love.graphics.setColor(1, 0.3, 0.3)
-				love.graphics.printf("GAME OVER", 0, GRID_Y + GRID_PX_H / 2 - CELL_SIZE, SCREEN_W, "center")
+				if s.won then
+					love.graphics.setColor(0.3, 1, 0.3)
+					love.graphics.printf("YOU WIN!", 0, GRID_Y + GRID_PX_H / 2 - CELL_SIZE, SCREEN_W, "center")
+				else
+					love.graphics.setColor(1, 0.3, 0.3)
+					love.graphics.printf("GAME OVER", 0, GRID_Y + GRID_PX_H / 2 - CELL_SIZE, SCREEN_W, "center")
+				end
 				love.graphics.setColor(1, 1, 1, 0.7)
 				love.graphics.printf("tap to restart", 0, GRID_Y + GRID_PX_H / 2 + CELL_SIZE * 0.5, SCREEN_W, "center")
 			end
@@ -276,10 +281,11 @@ function StackerPlugin:_try_place()
 	})
 	evolved.commit()
 
-	-- Check if tower reached the top
+	-- Win condition: tower reached the top
 	if next_row < 0 then
 		gs.active = false
-		self._bus:emit("stacker:game_over", { score = gs.score })
+		gs.won = true
+		self._bus:emit("stacker:win", { score = gs.score })
 		return
 	end
 

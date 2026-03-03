@@ -1,0 +1,16 @@
+.git
+.github
+.githooks
+.planning
+tests
+scripts
+.busted
+busted.yml
+love2d.yml
+love2d_busted.yml
+selene.toml
+.stylua.toml
+.styluaignore
+.loveignore
+CLAUDE.md
+README.md
