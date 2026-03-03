@@ -1,6 +1,6 @@
 --- Tests for src/core/components.lua
 --- Game-specific ECS fragment ID registry.
---- Now populated with stacker game fragments: StackBlock, MovingBlock, GameState.
+--- Now populated with stacker game fragments: StackRow, MovingRow, GameState.
 ---
 --- Run with: busted tests/core/components_spec.lua
 
@@ -11,14 +11,14 @@ describe("Components", function()
 		assert.is_table(Components)
 	end)
 
-	it("exports StackBlock fragment ID (stacker game)", function()
-		assert.is_not_nil(Components.StackBlock)
-		assert.is_number(Components.StackBlock)
+	it("exports StackRow fragment ID (stacker game)", function()
+		assert.is_not_nil(Components.StackRow)
+		assert.is_number(Components.StackRow)
 	end)
 
-	it("exports MovingBlock fragment ID (stacker game)", function()
-		assert.is_not_nil(Components.MovingBlock)
-		assert.is_number(Components.MovingBlock)
+	it("exports MovingRow fragment ID (stacker game)", function()
+		assert.is_not_nil(Components.MovingRow)
+		assert.is_number(Components.MovingRow)
 	end)
 
 	it("exports GameState fragment ID (stacker game)", function()
@@ -27,9 +27,9 @@ describe("Components", function()
 	end)
 
 	it("all fragment IDs are distinct", function()
-		assert.are_not.equal(Components.StackBlock, Components.MovingBlock)
-		assert.are_not.equal(Components.MovingBlock, Components.GameState)
-		assert.are_not.equal(Components.StackBlock, Components.GameState)
+		assert.are_not.equal(Components.StackRow, Components.MovingRow)
+		assert.are_not.equal(Components.MovingRow, Components.GameState)
+		assert.are_not.equal(Components.StackRow, Components.GameState)
 	end)
 
 	it("has no Position fragment (framework is genre-agnostic)", function()

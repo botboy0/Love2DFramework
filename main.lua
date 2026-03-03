@@ -20,7 +20,6 @@ local _registry
 local _ctx
 local _input_plugin
 
-
 function love.load()
 	-- Resolve bus error mode from config
 	local bus_error_mode = (_config.error_modes and _config.error_modes.bus) or _config.error_mode or "tolerant"

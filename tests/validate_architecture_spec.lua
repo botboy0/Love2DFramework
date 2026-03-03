@@ -10,13 +10,16 @@ local Validator = require("scripts.validate_architecture")
 -- Helpers
 -------------------------------------------------------------------------------
 
+--- Base temp directory — respects TMPDIR for environments where /tmp is read-only (e.g. Termux).
+local TMPBASE = os.getenv("TMPDIR") or "/tmp"
+
 --- Write a temp file with the given content. Returns the path.
 --- @param filename string  Filename portion (no directory)
 --- @param content  string
---- @param dir      string  Optional directory prefix (default /tmp/arch_test)
+--- @param dir      string  Optional directory prefix (default TMPBASE/arch_test)
 --- @return string  Full path to the written file
 local function write_temp(filename, content, dir)
-	dir = dir or "/tmp/arch_test"
+	dir = dir or (TMPBASE .. "/arch_test")
 	os.execute('mkdir -p "' .. dir .. '"')
 	local path = dir .. "/" .. filename
 	local f = io.open(path, "w")
@@ -189,8 +192,8 @@ end)
 -------------------------------------------------------------------------------
 
 describe("Validator.detect_missing_tests", function()
-	local tmp_src = "/tmp/arch_test_src"
-	local tmp_tests = "/tmp/arch_test_tests"
+	local tmp_src = TMPBASE .. "/arch_test_src"
+	local tmp_tests = TMPBASE .. "/arch_test_tests"
 
 	before_each(function()
 		remove_dir(tmp_src)
@@ -222,9 +225,9 @@ describe("Validator.detect_missing_tests", function()
 		-- so file_exists() can find it.
 		-- Use the actual project paths since the validator checks the real fs.
 		local src_path = write_temp("movement_test_src.lua", "-- src fixture", tmp_src)
-		local test_dir = tmp_src:gsub("/tmp/arch_test_src", "/tmp/arch_test_tests")
+		local test_dir = tmp_src:gsub(TMPBASE .. "/arch_test_src", TMPBASE .. "/arch_test_tests")
 		os.execute('mkdir -p "' .. test_dir .. '"')
-		local test_path = tmp_src:gsub("/tmp/arch_test_src", "/tmp/arch_test_tests") .. "/movement_test_src_spec.lua"
+		local test_path = tmp_src:gsub(TMPBASE .. "/arch_test_src", TMPBASE .. "/arch_test_tests") .. "/movement_test_src_spec.lua"
 
 		-- Write the expected test file
 		local tf = io.open(test_path, "w")
@@ -401,7 +404,7 @@ end)
 -------------------------------------------------------------------------------
 
 describe("Validator.detect_undeclared_service_deps", function()
-	local tmp_svc = "/tmp/arch_test_svc"
+	local tmp_svc = TMPBASE .. "/arch_test_svc"
 
 	before_each(function()
 		remove_dir(tmp_svc)

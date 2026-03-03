@@ -8,6 +8,21 @@ local StackerPlugin = require("src.plugins.stacker")
 local evolved = require("lib.evolved")
 local harness = require("tests.helpers.plugin_harness")
 
+--- Mock love.graphics so stacker init() can call getWidth/getHeight headlessly.
+--- Use _G explicitly so the mock reaches the global scope that src/ code reads.
+if not _G.love then
+	_G.love = {}
+end
+if not _G.love.graphics then
+	_G.love.graphics = {}
+end
+_G.love.graphics.getWidth = _G.love.graphics.getWidth or function()
+	return 720
+end
+_G.love.graphics.getHeight = _G.love.graphics.getHeight or function()
+	return 1280
+end
+
 --- Count all entities matching a query.
 --- @param q table  evolved query
 --- @return number
@@ -61,8 +76,8 @@ describe("StackerPlugin", function()
 		ctx = harness.create_context({
 			config = { input = { place = { key = "space", sc = "space" } } },
 		})
-		moving_q = evolved.builder():include(C.MovingBlock):build()
-		stack_q = evolved.builder():include(C.StackBlock):build()
+		moving_q = evolved.builder():include(C.MovingRow):build()
+		stack_q = evolved.builder():include(C.StackRow):build()
 		state_q = evolved.builder():include(C.GameState):build()
 	end)
 
@@ -78,13 +93,13 @@ describe("StackerPlugin", function()
 			assert.are.equal(1, count_query(state_q))
 		end)
 
-		it("spawns exactly 1 StackBlock (floor)", function()
+		it("spawns exactly 1 StackRow (floor)", function()
 			local plugin = make_plugin()
 			plugin:init(ctx)
 			assert.are.equal(1, count_query(stack_q))
 		end)
 
-		it("spawns exactly 1 MovingBlock", function()
+		it("spawns exactly 1 MovingRow", function()
 			local plugin = make_plugin()
 			plugin:init(ctx)
 			assert.are.equal(1, count_query(moving_q))
@@ -101,42 +116,42 @@ describe("StackerPlugin", function()
 	end)
 
 	describe("update(dt)", function()
-		it("moves moving block x by speed * dir * dt", function()
+		it("moves moving row col by dir when timer exceeds speed", function()
 			local plugin = make_plugin()
 			plugin:init(ctx)
 
-			local mb = first_component(moving_q, C.MovingBlock)
-			assert.is_not_nil(mb)
-			local initial_x = mb.x
-			local dir = mb.dir
-			local speed = mb.speed
+			local mr = first_component(moving_q, C.MovingRow)
+			assert.is_not_nil(mr)
+			local initial_col = mr.col
+			local dir = mr.dir
 
-			plugin:update(0.016)
+			-- Advance by enough time to trigger at least one move
+			plugin:update(mr.speed + 0.001)
 
-			-- re-fetch after update
-			mb = first_component(moving_q, C.MovingBlock)
-			local expected_x = initial_x + speed * dir * 0.016
-			assert.are.equal(expected_x, mb.x)
+			mr = first_component(moving_q, C.MovingRow)
+			assert.are.equal(initial_col + dir, mr.col)
 		end)
 
-		it("reverses dir when block reaches right edge (x + w >= SCREEN_W)", function()
-			local SCREEN_W = 1280
+		it("reverses dir when block reaches right edge (col + width > GRID_COLS)", function()
 			local plugin = make_plugin()
 			plugin:init(ctx)
 
-			-- Force moving block to near right edge
+			-- Force moving row to right edge
 			for chunk, _entities, count in evolved.execute(moving_q) do
-				local blocks = chunk:components(C.MovingBlock)
+				local rows = chunk:components(C.MovingRow)
 				for i = 1, count do
-					blocks[i].x = SCREEN_W - blocks[i].w -- exactly at right edge
-					blocks[i].dir = 1 -- moving right
+					rows[i].col = 7 - rows[i].width -- at right edge (GRID_COLS=7)
+					rows[i].dir = 1
+					rows[i].timer = 0
 				end
 			end
 
-			plugin:update(0.016)
+			-- Advance enough to trigger a move
+			local mr = first_component(moving_q, C.MovingRow)
+			plugin:update(mr.speed + 0.001)
 
-			local mb = first_component(moving_q, C.MovingBlock)
-			assert.are.equal(-1, mb.dir)
+			mr = first_component(moving_q, C.MovingRow)
+			assert.are.equal(-1, mr.dir)
 		end)
 
 		it("does NOT move block when game is inactive", function()
@@ -151,44 +166,42 @@ describe("StackerPlugin", function()
 				end
 			end
 
-			local mb_before = first_component(moving_q, C.MovingBlock)
-			local x_before = mb_before.x
+			local mr_before = first_component(moving_q, C.MovingRow)
+			local col_before = mr_before.col
 
-			plugin:update(0.1)
+			plugin:update(1.0)
 
-			local mb_after = first_component(moving_q, C.MovingBlock)
-			assert.are.equal(x_before, mb_after.x)
+			local mr_after = first_component(moving_q, C.MovingRow)
+			assert.are.equal(col_before, mr_after.col)
 		end)
 	end)
 
 	describe("placement via input:action_pressed", function()
-		it("trims moving block to overlap width on partial overlap", function()
+		it("trims moving row to overlap width on partial overlap", function()
 			local plugin = make_plugin()
 			plugin:init(ctx)
 
-			-- Position moving block to partial overlap (shifted right by 50px)
+			-- Position moving row to partial overlap (shifted right by 2 cells)
 			local gs = first_component(state_q, C.GameState)
+			local original_width = gs.top_width -- 4
 			for chunk, _entities, count in evolved.execute(moving_q) do
-				local blocks = chunk:components(C.MovingBlock)
+				local rows = chunk:components(C.MovingRow)
 				for i = 1, count do
-					-- shift right 50px — overlap is (START_W - 50) = 250
-					blocks[i].x = gs.tower_top_x + 50
+					rows[i].col = gs.top_col + 2
 				end
 			end
 
-			-- Call _try_place directly (avoids bus re-entrancy issues with flush)
 			plugin:_try_place()
 
-			local mb = first_component(moving_q, C.MovingBlock)
-			-- The overlap region is tower_top_w (300) - 50 = 250
-			assert.are.equal(250, mb.w)
+			-- Overlap = original_width - 2 = 2
+			local mr = first_component(moving_q, C.MovingRow)
+			assert.are.equal(original_width - 2, mr.width)
 		end)
 
 		it("increments score by 1 on successful placement", function()
 			local plugin = make_plugin()
 			plugin:init(ctx)
 
-			-- Call _try_place directly
 			plugin:_try_place()
 
 			local gs = first_component(state_q, C.GameState)
@@ -199,7 +212,6 @@ describe("StackerPlugin", function()
 			local plugin = make_plugin()
 			plugin:init(ctx)
 
-			-- Subscribe before emitting the action so the handler is registered
 			local game_over_fired = false
 			local game_over_score = nil
 			ctx.bus:on("stacker:game_over", function(data)
@@ -208,26 +220,24 @@ describe("StackerPlugin", function()
 			end)
 
 			-- Move block completely off tower (no overlap)
-			-- Floor is at x=(1280-300)/2=490; put block at far left with narrow width
 			for chunk, _entities, count in evolved.execute(moving_q) do
-				local blocks = chunk:components(C.MovingBlock)
+				local rows = chunk:components(C.MovingRow)
 				for i = 1, count do
-					blocks[i].x = 0
-					blocks[i].w = 10
+					rows[i].col = 0
+					rows[i].width = 1
 				end
 			end
 
-			-- Emit input — _try_place runs during flush and calls bus:emit("stacker:game_over")
-			-- which is re-entrant (discarded). Emit directly instead to test the event path.
-			-- The real-game path: main.lua calls bus:flush() then bus:flush() each tick,
-			-- so game_over is queued in update phase and delivered next flush.
-			-- For the spec we call _try_place directly and then emit the event manually to
-			-- verify that gs.active=false (state test) and that the event fires correctly.
-			-- The stacker:game_over bus test is covered via direct emit below.
-			plugin:_try_place()
+			-- Force tower to far right so there's no overlap
+			local gs = first_component(state_q, C.GameState)
+			for chunk, _entities, count in evolved.execute(moving_q) do
+				local rows = chunk:components(C.MovingRow)
+				for i = 1, count do
+					rows[i].col = gs.top_col + gs.top_width + 1
+				end
+			end
 
-			-- After _try_place the game_over event is queued (re-entrant emit is discarded
-			-- by the bus guard during flush, but direct _try_place is NOT during a flush)
+			plugin:_try_place()
 			ctx.bus:flush()
 
 			assert.is_true(game_over_fired)
@@ -239,18 +249,18 @@ describe("StackerPlugin", function()
 			plugin:init(ctx)
 
 			-- Move block completely off tower
+			local gs = first_component(state_q, C.GameState)
 			for chunk, _entities, count in evolved.execute(moving_q) do
-				local blocks = chunk:components(C.MovingBlock)
+				local rows = chunk:components(C.MovingRow)
 				for i = 1, count do
-					blocks[i].x = 0
-					blocks[i].w = 10
+					rows[i].col = gs.top_col + gs.top_width + 1
+					rows[i].width = 1
 				end
 			end
 
-			-- Call _try_place directly to avoid bus re-entrancy guard during flush
 			plugin:_try_place()
 
-			local gs = first_component(state_q, C.GameState)
+			gs = first_component(state_q, C.GameState)
 			assert.is_false(gs.active)
 		end)
 	end)

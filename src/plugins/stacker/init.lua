@@ -201,7 +201,7 @@ function StackerPlugin:draw()
 
 	-- Score and game-over text
 	love.graphics.setColor(1, 1, 1)
-	local score_font_size = math.floor(CELL_SIZE * 0.8)
+	local _score_font_size = math.floor(CELL_SIZE * 0.8)
 	love.graphics.printf("STACKER", 0, GRID_Y - CELL_SIZE * 3.5, SCREEN_W, "center")
 	for chunk, _entities, count in evolved.execute(self._state_query) do
 		local states = chunk:components(C.GameState)
@@ -330,17 +330,17 @@ end
 --- Restart the game.
 function StackerPlugin:_restart()
 	evolved.defer()
-	for chunk, entities, count in evolved.execute(self._stack_query) do
+	for _chunk, entities, count in evolved.execute(self._stack_query) do
 		for i = 1, count do
 			evolved.destroy(entities[i])
 		end
 	end
-	for chunk, entities, count in evolved.execute(self._moving_query) do
+	for _chunk, entities, count in evolved.execute(self._moving_query) do
 		for i = 1, count do
 			evolved.destroy(entities[i])
 		end
 	end
-	for chunk, entities, count in evolved.execute(self._state_query) do
+	for _chunk, entities, count in evolved.execute(self._state_query) do
 		for i = 1, count do
 			evolved.destroy(entities[i])
 		end
