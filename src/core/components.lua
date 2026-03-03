@@ -3,13 +3,13 @@
 
 local evolved = require("lib.evolved")
 
---- StackBlock: { x, y, w, h, color } — a placed block on the tower.
---- MovingBlock: { x, y, w, h, speed, dir } — the current oscillating block.
---- GameState:   { score, active, tower_top_x, tower_top_w } — singleton game state.
-local StackBlock, MovingBlock, GameState = evolved.id(3)
+--- StackRow:    { col, row, width, color } — a placed row on the tower (grid coords).
+--- MovingRow:   { col, row, width, speed, dir, timer } — the oscillating row (grid coords).
+--- GameState:   { score, active, top_col, top_width, current_row } — singleton game state.
+local StackRow, MovingRow, GameState = evolved.id(3)
 
 return {
-	StackBlock = StackBlock,
-	MovingBlock = MovingBlock,
+	StackRow = StackRow,
+	MovingRow = MovingRow,
 	GameState = GameState,
 }

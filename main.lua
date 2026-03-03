@@ -12,13 +12,14 @@ local _config = {
 	-- error_modes = { bus = "strict", registry = "tolerant" },  -- per-module overrides
 	-- transport = nil,  -- set to a Transport instance to enable networking
 	input = {
-		place = { key = "space", sc = "space" },
+		place = { key = "space", sc = "space", touch = { x = 0, y = 0, w = 100, h = 100, unit = "pct" } },
 	},
 }
 
 local _registry
 local _ctx
 local _input_plugin
+
 
 function love.load()
 	-- Resolve bus error mode from config
@@ -76,6 +77,12 @@ function love.draw()
 		return
 	end
 	_registry:draw_all()
+end
+
+function love.resize(w, h)
+	if _registry then
+		_registry:resize_all(w, h)
+	end
 end
 
 function love.quit()

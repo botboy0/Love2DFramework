@@ -1,10 +1,10 @@
---- Stacker game plugin.
---- Classic arcade stacker: a block oscillates left/right, player presses 'place'
---- to stack it. Only the overlapping portion with the block below is kept.
---- Blocks narrow on imperfect placements. Game over when width reaches zero.
+--- Grid-based stacker game plugin.
+--- Classic arcade stacker: a row of cells oscillates left/right on a grid.
+--- Player taps to place it. Only the overlapping cells with the row below are kept.
+--- Rows shrink on imperfect placements. Game over when width reaches zero.
 ---
 --- Depends on: "input" service (via bus events — no direct service calls).
---- Emits:  stacker:placed   { score, block_w }
+--- Emits:  stacker:placed   { score, width }
 ---         stacker:game_over { score }
 ---         stacker:reset    {}
 ---
@@ -18,30 +18,43 @@ local StackerPlugin = {}
 StackerPlugin.__index = StackerPlugin
 
 StackerPlugin.name = "stacker"
-StackerPlugin.deps = {} -- uses bus events from input, not direct service dep
+StackerPlugin.deps = {}
 
---- Game constants
-local SCREEN_W = 1280
-local SCREEN_H = 720
-local BLOCK_H = 30 -- height of each layer
-local START_W = 300 -- width of first block
-local SPEED_BASE = 250 -- px/s initial oscillation speed
-local SPEED_INC = 20 -- px/s speed increase per successful placement
-local FLOOR_Y = SCREEN_H - 60 -- y position of the bottom layer
-local COLORS = {
-	{ 0.96, 0.26, 0.21 },
-	{ 0.13, 0.59, 0.95 },
-	{ 0.30, 0.69, 0.31 },
-	{ 1.00, 0.76, 0.03 },
-	{ 0.61, 0.15, 0.69 },
-	{ 0.00, 0.74, 0.83 },
-}
+--- Grid constants
+local GRID_COLS = 7
+local GRID_ROWS = 14
+local START_WIDTH = 4 -- starting row width in cells
 
---- Spawn an entity using the worlds handle.
---- In single-world mode, uses worlds:spawn(). In dual-world mode, uses worlds:spawn_server()
---- (game state entities belong to the server world).
---- @param worlds table  The worlds handle from ctx.worlds
---- @param components table  Component table (fragment -> value)
+--- Derived from screen size at init
+local SCREEN_W, SCREEN_H
+local CELL_SIZE -- square cells
+local GRID_X, GRID_Y -- top-left of grid on screen
+local GRID_PX_W, GRID_PX_H
+
+--- Timing
+local SPEED_BASE = 0.18 -- seconds per cell move (slower = easier)
+local SPEED_MIN = 0.04 -- fastest speed cap
+local SPEED_DEC = 0.012 -- seconds faster per row placed
+
+local BLOCK_COLOR = { 0.85, 0.0, 0.85 }
+
+local BG_COLOR = { 0.12, 0.12, 0.15 }
+local GRID_LINE_COLOR = { 0.25, 0.25, 0.30 }
+
+--- Recalculate pixel layout from screen dimensions.
+local function calc_layout()
+	-- Fit grid into screen with padding
+	local pad = math.floor(math.min(SCREEN_W, SCREEN_H) * 0.05)
+	local avail_w = SCREEN_W - pad * 2
+	local avail_h = SCREEN_H * 0.75 -- reserve top 25% for score/header
+	CELL_SIZE = math.floor(math.min(avail_w / GRID_COLS, avail_h / GRID_ROWS))
+	GRID_PX_W = CELL_SIZE * GRID_COLS
+	GRID_PX_H = CELL_SIZE * GRID_ROWS
+	GRID_X = math.floor((SCREEN_W - GRID_PX_W) / 2)
+	GRID_Y = SCREEN_H - GRID_PX_H - pad
+end
+
+--- Spawn helper
 local function worlds_spawn(worlds, components)
 	if worlds.server then
 		return worlds:spawn_server(components)
@@ -51,140 +64,176 @@ local function worlds_spawn(worlds, components)
 end
 
 --- Initialize the plugin.
---- Spawns the initial GameState and first StackBlock (the floor), then the first MovingBlock.
 --- @param ctx table { worlds, bus, config, services, transport }
 function StackerPlugin:init(ctx)
 	self._bus = ctx.bus
 	self._worlds = ctx.worlds
 
-	-- Queries built at init, reused every frame
-	self._moving_query = evolved.builder():include(C.MovingBlock):build()
-	self._stack_query = evolved.builder():include(C.StackBlock):build()
+	SCREEN_W = love.graphics.getWidth()
+	SCREEN_H = love.graphics.getHeight()
+	calc_layout()
+
+	self._stack_query = evolved.builder():include(C.StackRow):build()
+	self._moving_query = evolved.builder():include(C.MovingRow):build()
 	self._state_query = evolved.builder():include(C.GameState):build()
 
-	-- Spawn singleton GameState
-	worlds_spawn(self._worlds, {
-		[C.GameState] = {
-			score = 0,
-			active = true,
-			tower_top_x = (SCREEN_W - START_W) / 2,
-			tower_top_w = START_W,
-		},
-	})
+	self:_spawn_fresh()
 
-	-- Spawn the floor block (layer 0)
-	worlds_spawn(self._worlds, {
-		[C.StackBlock] = {
-			x = (SCREEN_W - START_W) / 2,
-			y = FLOOR_Y,
-			w = START_W,
-			h = BLOCK_H,
-			color = COLORS[1],
-		},
-	})
-
-	-- Spawn the first moving block one layer above the floor
-	worlds_spawn(self._worlds, {
-		[C.MovingBlock] = {
-			x = (SCREEN_W - START_W) / 2,
-			y = FLOOR_Y - BLOCK_H,
-			w = START_W,
-			h = BLOCK_H,
-			speed = SPEED_BASE,
-			dir = 1,
-		},
-	})
-
-	-- Listen for 'place' action via bus (input plugin emits this)
 	ctx.bus:on("input:action_pressed", function(data)
 		if data.action == "place" then
-			self:_try_place()
+			if self:_is_active() then
+				self:_try_place()
+			else
+				self:_restart()
+			end
 		end
 	end)
 end
 
---- Per-frame update: move the oscillating block left/right.
+--- Spawn initial game entities.
+function StackerPlugin:_spawn_fresh()
+	local start_col = math.floor((GRID_COLS - START_WIDTH) / 2)
+	local bottom_row = GRID_ROWS - 1
+
+	worlds_spawn(self._worlds, {
+		[C.GameState] = {
+			score = 0,
+			active = true,
+			top_col = start_col,
+			top_width = START_WIDTH,
+		},
+	})
+
+	-- Floor row
+	worlds_spawn(self._worlds, {
+		[C.StackRow] = {
+			col = start_col,
+			row = bottom_row,
+			width = START_WIDTH,
+			color = BLOCK_COLOR,
+		},
+	})
+
+	-- First moving row
+	worlds_spawn(self._worlds, {
+		[C.MovingRow] = {
+			col = 0,
+			row = bottom_row - 1,
+			width = START_WIDTH,
+			speed = SPEED_BASE,
+			dir = 1,
+			timer = 0,
+		},
+	})
+end
+
+--- Per-frame update: move the oscillating row cell-by-cell.
 --- @param dt number  Delta time in seconds
 function StackerPlugin:update(dt)
+	if not self:_is_active() then
+		return
+	end
 	for chunk, _entities, count in evolved.execute(self._moving_query) do
-		local blocks = chunk:components(C.MovingBlock)
+		local rows = chunk:components(C.MovingRow)
 		for i = 1, count do
-			local b = blocks[i]
-			-- Only move when game is active
-			if self:_is_active() then
-				b.x = b.x + b.speed * b.dir * dt
-				-- Bounce off screen edges (keep block fully visible)
-				if b.x < 0 then
-					b.x = 0
-					b.dir = 1
-				elseif b.x + b.w > SCREEN_W then
-					b.x = SCREEN_W - b.w
-					b.dir = -1
+			local r = rows[i]
+			r.timer = r.timer + dt
+			if r.timer >= r.speed then
+				r.timer = r.timer - r.speed
+				r.col = r.col + r.dir
+				-- Bounce off grid edges
+				if r.col < 0 then
+					r.col = 0
+					r.dir = 1
+				elseif r.col + r.width > GRID_COLS then
+					r.col = GRID_COLS - r.width
+					r.dir = -1
 				end
 			end
 		end
 	end
 end
 
---- Draw all stacked blocks and the moving block.
+--- Draw the grid, placed rows, moving row, and UI.
 function StackerPlugin:draw()
-	-- Draw placed stack
+	-- Background
+	love.graphics.setColor(BG_COLOR[1], BG_COLOR[2], BG_COLOR[3])
+	love.graphics.rectangle("fill", GRID_X, GRID_Y, GRID_PX_W, GRID_PX_H)
+
+	-- Grid lines
+	love.graphics.setColor(GRID_LINE_COLOR[1], GRID_LINE_COLOR[2], GRID_LINE_COLOR[3])
+	for c = 0, GRID_COLS do
+		local x = GRID_X + c * CELL_SIZE
+		love.graphics.line(x, GRID_Y, x, GRID_Y + GRID_PX_H)
+	end
+	for r = 0, GRID_ROWS do
+		local y = GRID_Y + r * CELL_SIZE
+		love.graphics.line(GRID_X, y, GRID_X + GRID_PX_W, y)
+	end
+
+	-- Draw placed stack rows
 	for chunk, _entities, count in evolved.execute(self._stack_query) do
-		local blocks = chunk:components(C.StackBlock)
+		local rows = chunk:components(C.StackRow)
 		for i = 1, count do
-			local b = blocks[i]
-			love.graphics.setColor(b.color[1], b.color[2], b.color[3])
-			love.graphics.rectangle("fill", b.x, b.y, b.w, b.h)
+			local s = rows[i]
+			love.graphics.setColor(s.color[1], s.color[2], s.color[3])
+			for c = 0, s.width - 1 do
+				local px = GRID_X + (s.col + c) * CELL_SIZE
+				local py = GRID_Y + s.row * CELL_SIZE
+				love.graphics.rectangle("fill", px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2)
+			end
 		end
 	end
 
-	-- Draw moving block (bright white outline + semi-transparent fill)
+	-- Draw moving row
 	for chunk, _entities, count in evolved.execute(self._moving_query) do
-		local blocks = chunk:components(C.MovingBlock)
+		local rows = chunk:components(C.MovingRow)
 		for i = 1, count do
-			local b = blocks[i]
-			love.graphics.setColor(1, 1, 1, 0.85)
-			love.graphics.rectangle("fill", b.x, b.y, b.w, b.h)
-			love.graphics.setColor(0, 0, 0)
-			love.graphics.rectangle("line", b.x, b.y, b.w, b.h)
+			local m = rows[i]
+			love.graphics.setColor(1, 1, 1, 0.9)
+			for c = 0, m.width - 1 do
+				local px = GRID_X + (m.col + c) * CELL_SIZE
+				local py = GRID_Y + m.row * CELL_SIZE
+				love.graphics.rectangle("fill", px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2)
+			end
 		end
 	end
 
-	-- Draw score (top-left)
+	-- Score and game-over text
 	love.graphics.setColor(1, 1, 1)
+	local score_font_size = math.floor(CELL_SIZE * 0.8)
+	love.graphics.printf("STACKER", 0, GRID_Y - CELL_SIZE * 3.5, SCREEN_W, "center")
 	for chunk, _entities, count in evolved.execute(self._state_query) do
 		local states = chunk:components(C.GameState)
 		for i = 1, count do
 			local s = states[i]
-			love.graphics.print("Score: " .. tostring(s.score), 10, 10)
+			love.graphics.printf("Score: " .. tostring(s.score), 0, GRID_Y - CELL_SIZE * 2, SCREEN_W, "center")
 			if not s.active then
-				love.graphics.print("GAME OVER — press R to restart", SCREEN_W / 2 - 150, SCREEN_H / 2)
+				love.graphics.setColor(1, 0.3, 0.3)
+				love.graphics.printf("GAME OVER", 0, GRID_Y + GRID_PX_H / 2 - CELL_SIZE, SCREEN_W, "center")
+				love.graphics.setColor(1, 1, 1, 0.7)
+				love.graphics.printf("tap to restart", 0, GRID_Y + GRID_PX_H / 2 + CELL_SIZE * 0.5, SCREEN_W, "center")
 			end
 		end
 	end
 end
 
---- Attempt to place the moving block on the tower.
---- Computes overlap with the top of the stack. If overlap > 0, spawns a new
---- StackBlock for the overlapping region and repositions the moving block.
---- If overlap == 0, emits game_over. Structural ECS mutations use defer/commit.
+--- Place the moving row onto the stack.
 function StackerPlugin:_try_place()
-	-- Read current moving block
-	local mb_x, mb_w, mb_y, mb_speed
+	local mr_col, mr_width, mr_speed, mr_row
 	for chunk, _entities, count in evolved.execute(self._moving_query) do
-		local blocks = chunk:components(C.MovingBlock)
+		local rows = chunk:components(C.MovingRow)
 		for i = 1, count do
-			mb_x = blocks[i].x
-			mb_w = blocks[i].w
-			mb_y = blocks[i].y
-			mb_speed = blocks[i].speed
+			mr_col = rows[i].col
+			mr_width = rows[i].width
+			mr_speed = rows[i].speed
+			mr_row = rows[i].row
 		end
 	end
-	if mb_x == nil then
+	if mr_col == nil then
 		return
 	end
 
-	-- Read game state
 	local gs_entity, gs
 	for chunk, entities, count in evolved.execute(self._state_query) do
 		local states = chunk:components(C.GameState)
@@ -197,58 +246,61 @@ function StackerPlugin:_try_place()
 		return
 	end
 
-	-- Compute overlap: intersection of [mb_x, mb_x+mb_w] with [gs.tower_top_x, gs.tower_top_x+gs.tower_top_w]
-	local overlap_x = math.max(mb_x, gs.tower_top_x)
-	local overlap_r = math.min(mb_x + mb_w, gs.tower_top_x + gs.tower_top_w)
-	local overlap_w = overlap_r - overlap_x
+	-- Compute overlap in grid cells
+	local overlap_left = math.max(mr_col, gs.top_col)
+	local overlap_right = math.min(mr_col + mr_width, gs.top_col + gs.top_width)
+	local overlap_w = overlap_right - overlap_left
 
 	if overlap_w <= 0 then
-		-- Miss — game over
 		gs.active = false
 		self._bus:emit("stacker:game_over", { score = gs.score })
 		return
 	end
 
-	-- Score and update state
 	gs.score = gs.score + 1
-	gs.tower_top_x = overlap_x
-	gs.tower_top_w = overlap_w
+	gs.top_col = overlap_left
+	gs.top_width = overlap_w
 
-	local new_y = mb_y
-	local color_idx = (gs.score % #COLORS) + 1
-	local new_speed = mb_speed + SPEED_INC
+	local new_speed = math.max(SPEED_MIN, mr_speed - SPEED_DEC)
+	local next_row = mr_row - 1
 
-	-- Spawn new StackBlock (structural — deferred)
+	-- Place row at the moving row's position
 	evolved.defer()
 	worlds_spawn(self._worlds, {
-		[C.StackBlock] = {
-			x = overlap_x,
-			y = new_y,
-			w = overlap_w,
-			h = BLOCK_H,
-			color = COLORS[color_idx],
+		[C.StackRow] = {
+			col = overlap_left,
+			row = mr_row,
+			width = overlap_w,
+			color = BLOCK_COLOR,
 		},
 	})
 	evolved.commit()
 
-	-- Move the moving block up one layer, reset to new width and position
+	-- Check if tower reached the top
+	if next_row < 0 then
+		gs.active = false
+		self._bus:emit("stacker:game_over", { score = gs.score })
+		return
+	end
+
+	-- Move the moving row up one
 	for chunk, _entities, count in evolved.execute(self._moving_query) do
-		local blocks = chunk:components(C.MovingBlock)
+		local rows = chunk:components(C.MovingRow)
 		for i = 1, count do
-			blocks[i].x = overlap_x
-			blocks[i].y = new_y - BLOCK_H
-			blocks[i].w = overlap_w
-			blocks[i].speed = new_speed
+			rows[i].col = 0
+			rows[i].row = next_row
+			rows[i].width = overlap_w
+			rows[i].speed = new_speed
+			rows[i].timer = 0
+			rows[i].dir = 1
 		end
 	end
 
-	self._bus:emit("stacker:placed", { score = gs.score, block_w = overlap_w })
-
-	-- Suppress unused variable warning (gs_entity is read during iteration)
+	self._bus:emit("stacker:placed", { score = gs.score, width = overlap_w })
 	local _ = gs_entity
 end
 
---- Returns true if the game is currently active (not game-over).
+--- Returns true if the game is currently active.
 --- @return boolean
 function StackerPlugin:_is_active()
 	for chunk, _entities, count in evolved.execute(self._state_query) do
@@ -258,6 +310,38 @@ function StackerPlugin:_is_active()
 		end
 	end
 	return false
+end
+
+--- Handle screen resize.
+--- @param w number  New screen width
+--- @param h number  New screen height
+function StackerPlugin:resize(w, h)
+	SCREEN_W = w
+	SCREEN_H = h
+	calc_layout()
+end
+
+--- Restart the game.
+function StackerPlugin:_restart()
+	evolved.defer()
+	for chunk, entities, count in evolved.execute(self._stack_query) do
+		for i = 1, count do
+			evolved.destroy(entities[i])
+		end
+	end
+	for chunk, entities, count in evolved.execute(self._moving_query) do
+		for i = 1, count do
+			evolved.destroy(entities[i])
+		end
+	end
+	for chunk, entities, count in evolved.execute(self._state_query) do
+		for i = 1, count do
+			evolved.destroy(entities[i])
+		end
+	end
+	self:_spawn_fresh()
+	evolved.commit()
+	self._bus:emit("stacker:reset", {})
 end
 
 --- Shutdown stub.

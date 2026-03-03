@@ -300,6 +300,17 @@ function Registry:draw_all()
 	end
 end
 
+--- Call resize(w, h) on all booted plugins that define it.
+--- @param w number  New screen width
+--- @param h number  New screen height
+function Registry:resize_all(w, h)
+	for _, entry in ipairs(self._boot_order) do
+		if entry.module.resize then
+			entry.module:resize(w, h)
+		end
+	end
+end
+
 --- Shut down all booted plugins in reverse boot order.
 --- Calls plugin:shutdown(ctx) for each plugin that defines it.
 --- Safe to call even if some plugins lack a shutdown method.
